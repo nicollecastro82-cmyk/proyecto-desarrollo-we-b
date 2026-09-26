@@ -1,3 +1,4 @@
+
 # PoliRestaurante - CRUD de categorías
 
 Programa de consola para crear, consultar, buscar, modificar y activar o desactivar
@@ -73,3 +74,6 @@ El programa mostrará este menú:
 5. Activar o desactivar categoría
 0. Salir
 ```
+=======
+# proyecto-desarrollo-web
+>>>>>>> 762e69dd354c098f727c7ecc5158507e1bcff438
