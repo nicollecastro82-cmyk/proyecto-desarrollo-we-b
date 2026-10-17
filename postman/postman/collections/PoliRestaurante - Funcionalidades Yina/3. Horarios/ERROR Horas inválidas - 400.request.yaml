@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/horarios"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_usuario": {{userId}},
+      "fecha": "2026-10-25",
+      "hora_inicio": "18:00",
+      "hora_fin": "08:00"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 400', () => pm.response.to.have.status(400));
+    language: text/javascript
+order: 6000

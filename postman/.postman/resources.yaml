@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: c5915457-262c-42e8-8f31-2d9f6a4c3878
+
+cloudResources:
+  collections:
+    ../postman/collections/PoliRestaurante - Funcionalidades Yina: d4d86cc1-0ab0-4311-bf36-6d76f10d31ef
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

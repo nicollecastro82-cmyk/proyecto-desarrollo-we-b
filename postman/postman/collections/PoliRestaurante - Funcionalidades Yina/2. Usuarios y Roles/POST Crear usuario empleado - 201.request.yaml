@@ -1,0 +1,30 @@
+$kind: http-request
+url: "{{baseUrl}}/api/usuarios"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_tipo_usuario": {{employeeRoleId}},
+      "nombre": "Empleado Postman",
+      "usuario_login": "{{employeeLogin}}",
+      "contrasena": "ClaveSegura123",
+      "correo": "{{employeeEmail}}",
+      "telefono": "3001234567"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const run = Date.now();
+      pm.environment.set('employeeLogin', 'empleado_' + run);
+      pm.environment.set('employeeEmail', 'empleado_' + run + '@example.com');
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) pm.environment.set('userId', pm.response.json().datos.id_usuario);
+      pm.test('No expone contraseña', () => pm.expect(pm.response.text()).not.to.include('contrasena_hash'));
+    language: text/javascript
+order: 5000

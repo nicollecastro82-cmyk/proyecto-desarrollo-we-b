@@ -1,0 +1,232 @@
+{
+  "info": {
+    "_postman_id": "17d7ab2d-468b-4c48-862f-fc1717da6b17",
+    "name": "PoliRestaurante - Funcionalidades Yina",
+    "description": "CRUD REST de Categorías, Usuarios y Roles, Horarios, Pagos y Entregas. Ejecutar con el ambiente PoliRestaurante local.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Salud",
+      "item": [
+        {
+          "name": "GET Salud - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/salud"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Base conectada', () => pm.expect(pm.response.json().base_datos).to.eql('conectada'));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "1. Categorías",
+      "item": [
+        {
+          "name": "POST Crear categoría - 201",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"{{categoryName}}\",\n  \"activo\": true\n}"},
+            "url": "{{baseUrl}}/api/categorias"
+          },
+          "event": [{"listen": "prerequest", "script": {"exec": ["pm.environment.set('categoryName', 'Bebidas Postman ' + Date.now());"], "type": "text/javascript"}}, {"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('categoryId', pm.response.json().datos.id_categoria);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "GET Listar categorías activas - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/categorias"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Respuesta es lista', () => pm.expect(pm.response.json().datos).to.be.an('array'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "GET Categoría por ID - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/categorias/{{categoryId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PUT Reemplazar categoría - 200",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"{{categoryName}} actualizada\",\n  \"activo\": true\n}"},
+            "url": "{{baseUrl}}/api/categorias/{{categoryId}}"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PATCH Cambiar estado - 200",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"activo\": true\n}"},
+            "url": "{{baseUrl}}/api/categorias/{{categoryId}}/estado"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "DELETE Desactivar categoría - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/categorias/{{categoryId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Queda inactiva', () => pm.expect(pm.response.json().datos.activo).to.eql(false));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "ERROR Nombre vacío - 400",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"\"\n}"},
+            "url": "{{baseUrl}}/api/categorias"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 400', () => pm.response.to.have.status(400));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "2. Usuarios y Roles",
+      "item": [
+        {
+          "name": "GET Roles iniciales - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/tipos-usuario"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "const roles = pm.response.json().datos;", "const empleado = roles.find(r => r.descripcion === 'MESERO');", "const domiciliario = roles.find(r => r.descripcion === 'DOMICILIARIO');", "if (empleado) pm.environment.set('employeeRoleId', empleado.id_tipo_usuario);", "if (domiciliario) pm.environment.set('courierRoleId', domiciliario.id_tipo_usuario);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "POST Crear rol temporal - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"descripcion\": \"SUPERVISOR_POSTMAN\"\n}"}, "url": "{{baseUrl}}/api/tipos-usuario"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('roleId', pm.response.json().datos.id_tipo_usuario);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PUT Actualizar rol - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"descripcion\": \"AUDITOR_POSTMAN\"\n}"}, "url": "{{baseUrl}}/api/tipos-usuario/{{roleId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "DELETE Eliminar rol sin usuarios - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/tipos-usuario/{{roleId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "POST Crear usuario empleado - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{employeeRoleId}},\n  \"nombre\": \"Empleado Postman\",\n  \"usuario_login\": \"{{employeeLogin}}\",\n  \"contrasena\": \"ClaveSegura123\",\n  \"correo\": \"{{employeeEmail}}\",\n  \"telefono\": \"3001234567\"\n}"}, "url": "{{baseUrl}}/api/usuarios"},
+          "event": [{"listen": "prerequest", "script": {"exec": ["const run = Date.now();", "pm.environment.set('employeeLogin', 'empleado_' + run);", "pm.environment.set('employeeEmail', 'empleado_' + run + '@example.com');"], "type": "text/javascript"}}, {"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('userId', pm.response.json().datos.id_usuario);", "pm.test('No expone contraseña', () => pm.expect(pm.response.text()).not.to.include('contrasena_hash'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "POST Crear domiciliario - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{courierRoleId}},\n  \"nombre\": \"Domiciliario Postman\",\n  \"usuario_login\": \"{{courierLogin}}\",\n  \"contrasena\": \"ClaveSegura123\",\n  \"correo\": \"{{courierEmail}}\"\n}"}, "url": "{{baseUrl}}/api/usuarios"},
+          "event": [{"listen": "prerequest", "script": {"exec": ["const run = Date.now();", "pm.environment.set('courierLogin', 'domiciliario_' + run);", "pm.environment.set('courierEmail', 'domiciliario_' + run + '@example.com');"], "type": "text/javascript"}}, {"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('courierId', pm.response.json().datos.id_usuario);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "GET Usuario por ID - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/usuarios/{{userId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PUT Actualizar usuario - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{employeeRoleId}},\n  \"nombre\": \"Empleado Actualizado\",\n  \"usuario_login\": \"{{employeeLogin}}\",\n  \"correo\": \"{{employeeEmail}}\",\n  \"telefono\": \"3111234567\",\n  \"activo\": true\n}"}, "url": "{{baseUrl}}/api/usuarios/{{userId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "POST Iniciar sesión - 200",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"usuario_login\": \"{{employeeLogin}}\",\n  \"contrasena\": \"ClaveSegura123\"\n}"}, "url": "{{baseUrl}}/api/auth/login"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "DELETE Desactivar usuario - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/usuarios/{{userId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "3. Horarios",
+      "item": [
+        {
+          "name": "PATCH Reactivar empleado - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"activo\": true\n}"}, "url": "{{baseUrl}}/api/usuarios/{{userId}}/estado"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "POST Crear horario - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_usuario\": {{userId}},\n  \"fecha\": \"2026-10-24\",\n  \"hora_inicio\": \"08:00\",\n  \"hora_fin\": \"16:00\",\n  \"observacion\": \"Turno Postman\"\n}"}, "url": "{{baseUrl}}/api/horarios"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('scheduleId', pm.response.json().datos.id_horario);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "GET Listar horarios - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/horarios?id_usuario={{userId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PUT Actualizar horario - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_usuario\": {{userId}},\n  \"fecha\": \"2026-10-24\",\n  \"hora_inicio\": \"09:00\",\n  \"hora_fin\": \"17:00\",\n  \"observacion\": \"Turno actualizado\"\n}"}, "url": "{{baseUrl}}/api/horarios/{{scheduleId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "DELETE Eliminar horario - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/horarios/{{scheduleId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "ERROR Horas inválidas - 400",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_usuario\": {{userId}},\n  \"fecha\": \"2026-10-25\",\n  \"hora_inicio\": \"18:00\",\n  \"hora_fin\": \"08:00\"\n}"}, "url": "{{baseUrl}}/api/horarios"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 400', () => pm.response.to.have.status(400));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "4. Pagos - requiere Pedido",
+      "description": "Estas solicitudes funcionarán con 201/200 cuando la otra integrante integre la tabla pedido y orderId sea válido. Actualmente la creación devuelve 503 documentado.",
+      "item": [
+        {
+          "name": "GET Listar pagos - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/pagos"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "POST Crear pago - 201 o dependencia 503",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_pedido\": {{orderId}},\n  \"metodo\": \"PSE\",\n  \"valor\": 25000\n}"}, "url": "{{baseUrl}}/api/pagos"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 al integrar Pedido o 503 mientras falta', () => pm.expect([201, 503]).to.include(pm.response.code));", "if (pm.response.code === 201) pm.environment.set('paymentId', pm.response.json().datos.id_pago);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PUT Actualizar pago pendiente - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"metodo\": \"PSE\",\n  \"valor\": 26000,\n  \"referencia_transaccion\": \"PSE-POSTMAN-001\"\n}"}, "url": "{{baseUrl}}/api/pagos/{{paymentId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PATCH Aprobar pago - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"APROBADO\",\n  \"id_usuario_confirma\": {{userId}},\n  \"referencia_transaccion\": \"PSE-POSTMAN-001\"\n}"}, "url": "{{baseUrl}}/api/pagos/{{paymentId}}/estado"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "DELETE Pago finalizado - error 409",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/pagos/{{paymentId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 409', () => pm.response.to.have.status(409));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "5. Entregas - requiere Pedido",
+      "description": "Estas solicitudes funcionarán al integrar la tabla pedido con un pedido DOMICILIO válido.",
+      "item": [
+        {
+          "name": "GET Listar entregas - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/entregas"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "POST Crear entrega - 201 o dependencia 503",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_pedido\": {{orderId}},\n  \"direccion_entrega\": \"Calle 10 # 20-30\",\n  \"telefono_contacto\": \"3001234567\"\n}"}, "url": "{{baseUrl}}/api/entregas"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 al integrar Pedido o 503 mientras falta', () => pm.expect([201, 503]).to.include(pm.response.code));", "if (pm.response.code === 201) pm.environment.set('deliveryId', pm.response.json().datos.id_entrega);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PUT Actualizar datos de entrega - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"direccion_entrega\": \"Carrera 20 # 30-40\",\n  \"telefono_contacto\": \"3111234567\",\n  \"observacion\": \"Portería\"\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "PATCH Asignar domiciliario - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"ASIGNADA\",\n  \"id_domiciliario\": {{courierId}}\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "DELETE Entrega asignada - error 409",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/entregas/{{deliveryId}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 409', () => pm.response.to.have.status(409));"], "type": "text/javascript"}}]
+        }
+      ]
+    }
+  ]
+}

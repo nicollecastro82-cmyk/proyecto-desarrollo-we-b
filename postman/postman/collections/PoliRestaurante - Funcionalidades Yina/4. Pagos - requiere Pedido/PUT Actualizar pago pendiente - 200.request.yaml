@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pagos/{{paymentId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "metodo": "PSE",
+      "valor": 26000,
+      "referencia_transaccion": "PSE-POSTMAN-001"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000
