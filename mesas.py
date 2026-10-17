@@ -61,3 +61,23 @@ def consultar_mesa(id_mesa):
     if mesa is None:
         return None, f"No existe una mesa con id {id_mesa}."
     return mesa, None
+
+
+def actualizar_mesa(id_mesa, nuevo_numero):
+    mesa, error = consultar_mesa(id_mesa)
+    if error:
+        return None, error
+
+    error = validar_numero(nuevo_numero)
+    if error:
+        return None, error
+    if numero_duplicado(nuevo_numero, excluir_id=id_mesa):
+        return None, f"Ya existe la mesa {nuevo_numero}."
+
+    mesa.numero_mesa = nuevo_numero
+    try:
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return None, f"No fue posible actualizar la mesa. Detalle: {e}"
+    return mesa, None
