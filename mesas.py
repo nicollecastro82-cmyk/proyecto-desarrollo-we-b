@@ -81,3 +81,27 @@ def actualizar_mesa(id_mesa, nuevo_numero):
         db.session.rollback()
         return None, f"No fue posible actualizar la mesa. Detalle: {e}"
     return mesa, None
+
+
+def cambiar_estado(id_mesa, nuevo_estado):
+    mesa, error = consultar_mesa(id_mesa)
+    if error:
+        return None, error
+    if mesa.estado == nuevo_estado:
+        return None, f"La mesa {mesa.numero_mesa} ya está {nuevo_estado}."
+
+    mesa.estado = nuevo_estado
+    try:
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return None, f"No fue posible cambiar el estado. Detalle: {e}"
+    return mesa, None
+
+
+def ocupar_mesa(id_mesa):
+    return cambiar_estado(id_mesa, "ocupada")
+
+
+def liberar_mesa(id_mesa):
+    return cambiar_estado(id_mesa, "libre")
