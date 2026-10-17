@@ -24,3 +24,15 @@ values:
     value: ''
   - key: categoryName
     value: ''
+  - key: mesaId
+    value: ''
+  - key: mesaNumber
+    value: ''
+  - key: mesaUpdatedNumber
+    value: ''
+  - key: productCategoryId
+    value: '2'
+  - key: productId
+    value: ''
+  - key: productName
+    value: ''

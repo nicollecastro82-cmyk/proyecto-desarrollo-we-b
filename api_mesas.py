@@ -1,21 +1,25 @@
-from flask import jsonify, request
+from flask import Blueprint, jsonify, request
 
 from mesas import (
     ESTADOS_VALIDOS,
     actualizar_mesa,
-    app,
     cambiar_estado,
     consultar_mesa,
     crear_mesa,
     listar_mesas,
+    normalizar_estado,
 )
 
 
+mesas_bp = Blueprint("mesas", __name__)
+
+
 def mesa_a_dict(mesa):
+    estado = mesa.estado.value if hasattr(mesa.estado, "value") else str(mesa.estado)
     return {
         "id_mesa": mesa.id_mesa,
         "numero_mesa": mesa.numero_mesa,
-        "estado": mesa.estado,
+        "estado": estado,
     }
 
 
@@ -32,18 +36,22 @@ def respuesta_error(mensaje):
 
 
 def leer_cuerpo():
+    if not request.is_json:
+        return None
     cuerpo = request.get_json(silent=True)
-    return cuerpo if isinstance(cuerpo, dict) else {}
+    return cuerpo if isinstance(cuerpo, dict) else None
 
 
 def leer_numero(cuerpo):
+    if cuerpo is None:
+        return None
     numero = cuerpo.get("numero_mesa")
     if isinstance(numero, bool) or not isinstance(numero, int):
         return None
     return numero
 
 
-@app.post("/mesas")
+@mesas_bp.post("/mesas")
 def registrar_mesa():
     numero = leer_numero(leer_cuerpo())
     if numero is None:
@@ -55,16 +63,16 @@ def registrar_mesa():
     return jsonify(mesa_a_dict(mesa)), 201
 
 
-@app.get("/mesas")
+@mesas_bp.get("/mesas")
 def consultar_mesas():
     estado = request.args.get("estado")
     mesas, error = listar_mesas(estado)
     if error:
         return respuesta_error(error)
-    return jsonify([mesa_a_dict(m) for m in mesas]), 200
+    return jsonify([mesa_a_dict(mesa) for mesa in mesas]), 200
 
 
-@app.get("/mesas/<int:id_mesa>")
+@mesas_bp.get("/mesas/<int:id_mesa>")
 def consultar_mesa_por_id(id_mesa):
     mesa, error = consultar_mesa(id_mesa)
     if error:
@@ -72,7 +80,7 @@ def consultar_mesa_por_id(id_mesa):
     return jsonify(mesa_a_dict(mesa)), 200
 
 
-@app.put("/mesas/<int:id_mesa>")
+@mesas_bp.put("/mesas/<int:id_mesa>")
 def modificar_mesa(id_mesa):
     numero = leer_numero(leer_cuerpo())
     if numero is None:
@@ -84,10 +92,11 @@ def modificar_mesa(id_mesa):
     return jsonify(mesa_a_dict(mesa)), 200
 
 
-@app.patch("/mesas/<int:id_mesa>/estado")
+@mesas_bp.patch("/mesas/<int:id_mesa>/estado")
 def modificar_estado(id_mesa):
-    estado = leer_cuerpo().get("estado")
-    if estado not in ESTADOS_VALIDOS:
+    cuerpo = leer_cuerpo()
+    estado = cuerpo.get("estado") if cuerpo is not None else None
+    if normalizar_estado(estado) is None:
         return respuesta_error(f"El estado debe ser uno de: {', '.join(ESTADOS_VALIDOS)}.")
 
     mesa, error = cambiar_estado(id_mesa, estado)
@@ -97,4 +106,6 @@ def modificar_estado(id_mesa):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    from app import create_app
+
+    create_app().run(debug=True)

@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/categorias/{{productCategoryId}}"
+method: GET
+scripts:
+  - type: beforeRequest
+    code: if (!pm.environment.get('productCategoryId')) pm.environment.set('productCategoryId', '2');
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('La categoría existe y está activa', () => { const c = pm.response.json().datos; pm.expect(c.id_categoria).to.eql(Number(pm.environment.get('productCategoryId'))); pm.expect(c.activo).to.eql(true); pm.expect(c.nombre).to.be.a('string').and.not.empty; });
+    language: text/javascript
+order: 1000

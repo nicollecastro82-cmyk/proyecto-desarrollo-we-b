@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/mesas/{{mesaId}}/estado"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "estado": "FUERA_DE_SERVICIO"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Queda fuera de servicio', () => pm.expect(pm.response.json().estado).to.eql('FUERA_DE_SERVICIO')); 
+    language: text/javascript
+order: 5000

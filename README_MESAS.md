@@ -1,40 +1,39 @@
-# PoliRestaurante - CRUD de mesas
+# PoliRestaurante - módulo de Mesas (Nicole)
 
-Programa de consola para registrar, consultar, actualizar y cambiar el estado de las
-mesas de PoliRestaurante. Reutiliza la conexión a PostgreSQL de `categorias.py`.
+El módulo mantiene sus cinco funcionalidades originales y ahora se registra en la
+aplicación común de `app.py`:
 
-## Archivos Python
+1. Registrar una mesa.
+2. Listar mesas, con filtro opcional por estado.
+3. Consultar una mesa por ID.
+4. Actualizar el número de una mesa.
+5. Cambiar el estado de una mesa.
 
-- `mesas.py`: define el modelo `Mesa`, las validaciones y las 5 funcionalidades.
-- `consola_mesas.py`: menú de consola para usar las funcionalidades.
+La tabla oficial usa `id_mesa`, `numero_mesa` y el enum `estado_mesa`, cuyos valores
+son `LIBRE`, `OCUPADA` y `FUERA_DE_SERVICIO`.
 
-## Tabla mesa
+## API REST
 
-| Campo         | Tipo                         | Restricción                          |
-| ------------- | ---------------------------- | ------------------------------------ |
-| `id_mesa`     | entero                       | llave primaria autoincremental       |
-| `numero_mesa` | entero                       | obligatorio, único y mayor que cero  |
-| `estado`      | texto de hasta 20 caracteres | obligatorio; `libre` u `ocupada`     |
-
-## Funcionalidades
-
-1. Registrar mesa (`crear_mesa`): crea una mesa en estado `libre`.
-2. Consultar mesas (`listar_mesas`): lista todas, con filtro opcional por estado.
-3. Consultar mesa por ID (`consultar_mesa`).
-4. Actualizar número de mesa (`actualizar_mesa`).
-5. Ocupar o liberar mesa (`ocupar_mesa` y `liberar_mesa`).
-
-## Preparación
-
-La conexión se guarda en `.env`, con el formato de `.env.example`. Para crear la tabla
-`mesa` por primera vez:
-
-```
-python -c "from mesas import app, db; app.app_context().push(); db.create_all()"
+```text
+POST  /mesas
+GET   /mesas
+GET   /mesas/{id}
+PUT   /mesas/{id}
+PATCH /mesas/{id}/estado
 ```
 
-## Ejecutar el programa
+Ejecuta todo el backend con:
 
+```powershell
+python -m flask --app app run --debug
 ```
-python consola_mesas.py
+
+La migración `migrations/001_crear_mesa_y_producto.sql` ya fue ejecutada y verificada
+en PostgreSQL. Para pruebas aisladas usa:
+
+```powershell
+python -m unittest tests.test_integracion_api -v
 ```
+
+La colección de Postman es
+`postman/PoliRestaurante-Mesas.postman_collection.json`.

@@ -1,0 +1,2 @@
+$kind: collection
+description: "Pruebas del módulo de Mesas integrado en app.py. No existe DELETE: la administración conserva la mesa y cambia su estado."

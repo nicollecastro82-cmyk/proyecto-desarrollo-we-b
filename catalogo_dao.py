@@ -1,6 +1,7 @@
 from sqlalchemy import func, or_
 
-from categorias import Categoria, db
+from extensions import db
+from models import Categoria
 from producto import Producto
 
 
@@ -25,7 +26,15 @@ class CatalogoDAO:
         return db.session.scalar(consulta) is not None
 
     def listar_productos_disponibles(self, id_categoria=None):
-        consulta = db.select(Producto).where(Producto.disponible.is_(True))
+        consulta = (
+            db.select(Producto)
+            .join(Producto.categoria)
+            .where(
+                Producto.activo.is_(True),
+                Producto.disponible.is_(True),
+                Categoria.activo.is_(True),
+            )
+        )
         if id_categoria is not None:
             consulta = consulta.where(Producto.id_categoria == id_categoria)
         return db.session.scalars(consulta.order_by(Producto.id_producto)).all()
@@ -36,7 +45,9 @@ class CatalogoDAO:
             db.select(Producto)
             .join(Producto.categoria)
             .where(
+                Producto.activo.is_(True),
                 Producto.disponible.is_(True),
+                Categoria.activo.is_(True),
                 or_(Producto.nombre.ilike(patron), Categoria.nombre.ilike(patron)),
             )
             .order_by(Producto.id_producto)

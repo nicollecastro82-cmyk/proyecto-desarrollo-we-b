@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/productos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "nombre": "{{productName}}",
+      "precio": 25000,
+      "id_categoria": {{productCategoryId}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 409', () => pm.response.to.have.status(409));
+      pm.test('Código correcto', () => pm.expect(pm.response.json().error.codigo).to.eql('PRODUCT_NAME_EXISTS')); 
+    language: text/javascript
+order: 3000

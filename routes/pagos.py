@@ -43,7 +43,11 @@ def parse_amount(value):
         raise ApiError(
             "El valor del pago debe ser numérico.", 400, "VALIDATION_ERROR"
         ) from error
-    if amount <= 0 or amount > Decimal("9999999999.99"):
+    if (
+        not amount.is_finite()
+        or amount <= 0
+        or amount > Decimal("9999999999.99")
+    ):
         raise ApiError("El valor del pago debe ser positivo.", 400, "VALIDATION_ERROR")
     return amount
 

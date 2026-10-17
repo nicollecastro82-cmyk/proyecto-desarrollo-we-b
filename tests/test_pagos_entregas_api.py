@@ -88,8 +88,13 @@ class PagosEntregasApiTestCase(unittest.TestCase):
         invalid = self.client.post(
             "/api/pagos", json={"id_pedido": 3, "metodo": "EFECTIVO", "valor": 0}
         )
+        not_finite = self.client.post(
+            "/api/pagos",
+            json={"id_pedido": 3, "metodo": "EFECTIVO", "valor": "NaN"},
+        )
         self.assertEqual(duplicate.status_code, 409)
         self.assertEqual(invalid.status_code, 400)
+        self.assertEqual(not_finite.status_code, 400)
 
     def test_crud_entrega_y_flujo_de_estados(self):
         created = self.client.post(

@@ -1,9 +1,17 @@
-from sqlalchemy import func
+import enum
+
 from sqlalchemy.exc import SQLAlchemyError
 
-from categorias import app, db
+from extensions import db
 
-ESTADOS_VALIDOS = ("libre", "ocupada")
+
+class EstadoMesa(str, enum.Enum):
+    LIBRE = "LIBRE"
+    OCUPADA = "OCUPADA"
+    FUERA_DE_SERVICIO = "FUERA_DE_SERVICIO"
+
+
+ESTADOS_VALIDOS = tuple(estado.value for estado in EstadoMesa)
 
 
 class Mesa(db.Model):
@@ -11,7 +19,21 @@ class Mesa(db.Model):
 
     id_mesa = db.Column(db.Integer, primary_key=True)
     numero_mesa = db.Column(db.Integer, nullable=False, unique=True)
-    estado = db.Column(db.String(20), nullable=False, default="libre", server_default="libre")
+    estado = db.Column(
+        db.Enum(EstadoMesa, name="estado_mesa"),
+        nullable=False,
+        default=EstadoMesa.LIBRE,
+        server_default=EstadoMesa.LIBRE.value,
+    )
+
+
+def normalizar_estado(estado):
+    if not isinstance(estado, str):
+        return None
+    try:
+        return EstadoMesa(estado.strip().upper())
+    except ValueError:
+        return None
 
 
 def validar_numero(numero):
@@ -40,19 +62,22 @@ def crear_mesa(numero):
     db.session.add(mesa)
     try:
         db.session.commit()
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.session.rollback()
-        return None, f"No fue posible guardar la mesa. Detalle: {e}"
+        return None, "No fue posible guardar la mesa."
     return mesa, None
 
 
 def listar_mesas(estado=None):
-    if estado is not None and estado not in ESTADOS_VALIDOS:
-        return None, f"El estado debe ser uno de: {', '.join(ESTADOS_VALIDOS)}."
+    estado_normalizado = None
+    if estado is not None:
+        estado_normalizado = normalizar_estado(estado)
+        if estado_normalizado is None:
+            return None, f"El estado debe ser uno de: {', '.join(ESTADOS_VALIDOS)}."
 
     consulta = db.select(Mesa).order_by(Mesa.numero_mesa)
-    if estado is not None:
-        consulta = consulta.where(Mesa.estado == estado)
+    if estado_normalizado is not None:
+        consulta = consulta.where(Mesa.estado == estado_normalizado)
     return db.session.scalars(consulta).all(), None
 
 
@@ -77,9 +102,9 @@ def actualizar_mesa(id_mesa, nuevo_numero):
     mesa.numero_mesa = nuevo_numero
     try:
         db.session.commit()
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.session.rollback()
-        return None, f"No fue posible actualizar la mesa. Detalle: {e}"
+        return None, "No fue posible actualizar la mesa."
     return mesa, None
 
 
@@ -87,21 +112,25 @@ def cambiar_estado(id_mesa, nuevo_estado):
     mesa, error = consultar_mesa(id_mesa)
     if error:
         return None, error
-    if mesa.estado == nuevo_estado:
-        return None, f"La mesa {mesa.numero_mesa} ya está {nuevo_estado}."
 
-    mesa.estado = nuevo_estado
+    estado_normalizado = normalizar_estado(nuevo_estado)
+    if estado_normalizado is None:
+        return None, f"El estado debe ser uno de: {', '.join(ESTADOS_VALIDOS)}."
+    if mesa.estado == estado_normalizado:
+        return None, f"La mesa {mesa.numero_mesa} ya está {estado_normalizado.value}."
+
+    mesa.estado = estado_normalizado
     try:
         db.session.commit()
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.session.rollback()
-        return None, f"No fue posible cambiar el estado. Detalle: {e}"
+        return None, "No fue posible cambiar el estado."
     return mesa, None
 
 
 def ocupar_mesa(id_mesa):
-    return cambiar_estado(id_mesa, "ocupada")
+    return cambiar_estado(id_mesa, EstadoMesa.OCUPADA.value)
 
 
 def liberar_mesa(id_mesa):
-    return cambiar_estado(id_mesa, "libre")
+    return cambiar_estado(id_mesa, EstadoMesa.LIBRE.value)

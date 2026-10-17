@@ -1,0 +1,83 @@
+{
+  "info": {
+    "_postman_id": "df44bab7-70ee-4fe8-91f3-e24806c6063f",
+    "name": "PoliRestaurante - Mesas (Nicole)",
+    "description": "Pruebas del módulo de Mesas integrado en app.py. No existe DELETE: la administración conserva la mesa y cambia su estado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST Registrar mesa - 201",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const numero = 100000 + Math.floor(Math.random() * 800000);",
+              "pm.environment.set('mesaNumber', numero);",
+              "pm.environment.set('mesaUpdatedNumber', numero + 1);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+              "pm.test('La mesa inicia LIBRE', () => pm.expect(pm.response.json().estado).to.eql('LIBRE'));",
+              "if (pm.response.code === 201) pm.environment.set('mesaId', pm.response.json().id_mesa);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"numero_mesa\": {{mesaNumber}}\n}"},
+        "url": "{{baseUrl}}/mesas"
+      }
+    },
+    {
+      "name": "GET Listar mesas - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Respuesta es lista', () => pm.expect(pm.response.json()).to.be.an('array')); "]}}],
+      "request": {"method": "GET", "url": "{{baseUrl}}/mesas?estado=LIBRE"}
+    },
+    {
+      "name": "GET Mesa por ID - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('ID correcto', () => pm.expect(pm.response.json().id_mesa).to.eql(Number(pm.environment.get('mesaId'))));"]}}],
+      "request": {"method": "GET", "url": "{{baseUrl}}/mesas/{{mesaId}}"}
+    },
+    {
+      "name": "PUT Actualizar número - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Número actualizado', () => pm.expect(pm.response.json().numero_mesa).to.eql(Number(pm.environment.get('mesaUpdatedNumber'))));"]}}],
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"numero_mesa\": {{mesaUpdatedNumber}}\n}"},
+        "url": "{{baseUrl}}/mesas/{{mesaId}}"
+      }
+    },
+    {
+      "name": "PATCH Cambiar estado - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Queda fuera de servicio', () => pm.expect(pm.response.json().estado).to.eql('FUERA_DE_SERVICIO')); "]}}],
+      "request": {
+        "method": "PATCH",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"estado\": \"FUERA_DE_SERVICIO\"\n}"},
+        "url": "{{baseUrl}}/mesas/{{mesaId}}/estado"
+      }
+    },
+    {
+      "name": "ERROR Estado inválido - 400",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 400', () => pm.response.to.have.status(400));"]}}],
+      "request": {
+        "method": "PATCH",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"estado\": \"RESERVADA\"\n}"},
+        "url": "{{baseUrl}}/mesas/{{mesaId}}/estado"
+      }
+    }
+  ]
+}

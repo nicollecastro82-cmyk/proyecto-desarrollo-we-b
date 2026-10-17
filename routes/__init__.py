@@ -1,3 +1,5 @@
+from api_mesas import mesas_bp
+from main import productos_bp
 from routes.categorias import categorias_bp
 from routes.entregas import entregas_bp
 from routes.horarios import horarios_bp
@@ -11,3 +13,5 @@ def register_blueprints(app):
     app.register_blueprint(horarios_bp)
     app.register_blueprint(pagos_bp)
     app.register_blueprint(entregas_bp)
+    app.register_blueprint(mesas_bp)
+    app.register_blueprint(productos_bp)

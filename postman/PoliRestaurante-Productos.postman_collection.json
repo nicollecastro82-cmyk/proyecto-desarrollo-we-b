@@ -1,0 +1,79 @@
+{
+  "info": {
+    "_postman_id": "9e63c9d8-acde-443b-9d38-4cf4a30f9198",
+    "name": "PoliRestaurante - Productos",
+    "description": "Pruebas del módulo de Productos integrado en app.py. Reutiliza una categoría administrada por el CRUD de Yina; por defecto usa Bebidas (ID 2) y primero verifica que exista y siga activa.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Precondición - GET Categoría existente activa - 200",
+      "event": [
+        {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["if (!pm.environment.get('productCategoryId')) pm.environment.set('productCategoryId', '2');"]}},
+        {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('La categoría existe y está activa', () => { const c = pm.response.json().datos; pm.expect(c.id_categoria).to.eql(Number(pm.environment.get('productCategoryId'))); pm.expect(c.activo).to.eql(true); pm.expect(c.nombre).to.be.a('string').and.not.empty; });"]}}
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/categorias/{{productCategoryId}}"
+      }
+    },
+    {
+      "name": "POST Crear producto - 201",
+      "event": [
+        {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["pm.environment.set('productName', 'Producto Integracion ' + Date.now());"]}},
+        {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "pm.test('Producto activo y disponible', () => { const p = pm.response.json(); pm.expect(p.activo).to.eql(true); pm.expect(p.disponible).to.eql(true); });", "if (pm.response.code === 201) pm.environment.set('productId', pm.response.json().id_producto);"]}}
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"{{productName}}\",\n  \"descripcion\": \"Dato de prueba Postman\",\n  \"precio\": 25000,\n  \"id_categoria\": {{productCategoryId}}\n}"},
+        "url": "{{baseUrl}}/productos"
+      }
+    },
+    {
+      "name": "ERROR Nombre duplicado - 409",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 409', () => pm.response.to.have.status(409));", "pm.test('Código correcto', () => pm.expect(pm.response.json().error.codigo).to.eql('PRODUCT_NAME_EXISTS')); "]}}],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"{{productName}}\",\n  \"precio\": 25000,\n  \"id_categoria\": {{productCategoryId}}\n}"},
+        "url": "{{baseUrl}}/productos"
+      }
+    },
+    {
+      "name": "GET Listar productos disponibles - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Respuesta es lista', () => pm.expect(pm.response.json()).to.be.an('array')); "]}}],
+      "request": {"method": "GET", "url": "{{baseUrl}}/productos?id_categoria={{productCategoryId}}"}
+    },
+    {
+      "name": "GET Producto por ID - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}],
+      "request": {"method": "GET", "url": "{{baseUrl}}/productos/{{productId}}"}
+    },
+    {
+      "name": "PUT Actualizar producto - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Precio actualizado', () => pm.expect(pm.response.json().precio).to.eql('26000.50')); "]}}],
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"descripcion\": \"Actualizado desde Postman\",\n  \"precio\": \"26000.50\"\n}"},
+        "url": "{{baseUrl}}/productos/{{productId}}"
+      }
+    },
+    {
+      "name": "PATCH Cambiar disponibilidad - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('No disponible', () => pm.expect(pm.response.json().disponible).to.eql(false));"]}}],
+      "request": {
+        "method": "PATCH",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"disponible\": false\n}"},
+        "url": "{{baseUrl}}/productos/{{productId}}/disponibilidad"
+      }
+    },
+    {
+      "name": "DELETE Desactivar producto - 200",
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Producto inactivo', () => pm.expect(pm.response.json().datos.activo).to.eql(false));"]}}],
+      "request": {"method": "DELETE", "url": "{{baseUrl}}/productos/{{productId}}"}
+    }
+  ]
+}
