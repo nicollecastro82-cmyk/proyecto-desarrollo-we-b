@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/categorias/{{categoryId}}"
+method: DELETE
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Queda inactiva', () => pm.expect(pm.response.json().datos.activo).to.eql(false));
+    language: text/javascript
+order: 6000

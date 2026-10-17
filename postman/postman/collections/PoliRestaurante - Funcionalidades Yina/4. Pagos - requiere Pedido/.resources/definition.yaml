@@ -1,0 +1,3 @@
+$kind: collection
+description: Estas solicitudes funcionarán con 201/200 cuando la otra integrante integre la tabla pedido y orderId sea válido. Actualmente la creación devuelve 503 documentado.
+order: 5000

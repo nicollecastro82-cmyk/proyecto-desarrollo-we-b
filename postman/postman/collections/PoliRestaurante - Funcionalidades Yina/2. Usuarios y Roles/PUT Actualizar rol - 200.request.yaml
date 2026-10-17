@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tipos-usuario/{{roleId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "descripcion": "AUDITOR_POSTMAN"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

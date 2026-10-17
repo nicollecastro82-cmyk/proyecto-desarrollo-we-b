@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/horarios/{{scheduleId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_usuario": {{userId}},
+      "fecha": "2026-10-24",
+      "hora_inicio": "09:00",
+      "hora_fin": "17:00",
+      "observacion": "Turno actualizado"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 4000

@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tipos-usuario"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      const roles = pm.response.json().datos;
+      const empleado = roles.find(r => r.descripcion === 'MESERO');
+      const domiciliario = roles.find(r => r.descripcion === 'DOMICILIARIO');
+      if (empleado) pm.environment.set('employeeRoleId', empleado.id_tipo_usuario);
+      if (domiciliario) pm.environment.set('courierRoleId', domiciliario.id_tipo_usuario);
+    language: text/javascript
+order: 1000

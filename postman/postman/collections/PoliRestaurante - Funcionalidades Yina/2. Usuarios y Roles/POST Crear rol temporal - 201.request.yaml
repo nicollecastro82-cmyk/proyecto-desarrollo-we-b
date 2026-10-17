@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tipos-usuario"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "descripcion": "SUPERVISOR_POSTMAN"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) pm.environment.set('roleId', pm.response.json().datos.id_tipo_usuario);
+    language: text/javascript
+order: 2000
