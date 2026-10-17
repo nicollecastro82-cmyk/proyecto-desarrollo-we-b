@@ -54,3 +54,10 @@ def listar_mesas(estado=None):
     if estado is not None:
         consulta = consulta.where(Mesa.estado == estado)
     return db.session.scalars(consulta).all(), None
+
+
+def consultar_mesa(id_mesa):
+    mesa = db.session.get(Mesa, id_mesa)
+    if mesa is None:
+        return None, f"No existe una mesa con id {id_mesa}."
+    return mesa, None
