@@ -44,3 +44,13 @@ def crear_mesa(numero):
         db.session.rollback()
         return None, f"No fue posible guardar la mesa. Detalle: {e}"
     return mesa, None
+
+
+def listar_mesas(estado=None):
+    if estado is not None and estado not in ESTADOS_VALIDOS:
+        return None, f"El estado debe ser uno de: {', '.join(ESTADOS_VALIDOS)}."
+
+    consulta = db.select(Mesa).order_by(Mesa.numero_mesa)
+    if estado is not None:
+        consulta = consulta.where(Mesa.estado == estado)
+    return db.session.scalars(consulta).all(), None
