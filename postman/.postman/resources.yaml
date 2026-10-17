@@ -1,0 +1,17 @@
+# Use this workspace to collaborate
+workspace:
+  id: c5915457-262c-42e8-8f31-2d9f6a4c3878
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/PoliRestaurante - Funcionalidades Yina: d4d86cc1-0ab0-4311-bf36-6d76f10d31ef
+    ../postman/collections/PoliRestaurante - Mesas (Nicole): 49b3395c-9667-4c79-9b4a-412f99d24c05
+    ../postman/collections/PoliRestaurante - Productos: 0817dd36-a438-44ac-980f-545917d922fd
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

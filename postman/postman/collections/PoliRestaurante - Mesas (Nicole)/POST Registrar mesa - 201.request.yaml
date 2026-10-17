@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/mesas"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "numero_mesa": {{mesaNumber}}
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const numero = 100000 + Math.floor(Math.random() * 800000);
+      pm.environment.set('mesaNumber', numero);
+      pm.environment.set('mesaUpdatedNumber', numero + 1);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      pm.test('La mesa inicia LIBRE', () => pm.expect(pm.response.json().estado).to.eql('LIBRE'));
+      if (pm.response.code === 201) pm.environment.set('mesaId', pm.response.json().id_mesa);
+    language: text/javascript
+order: 1000

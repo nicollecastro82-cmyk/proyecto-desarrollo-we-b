@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/entregas"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_pedido": {{orderId}},
+      "direccion_entrega": "Calle 10 # 20-30",
+      "telefono_contacto": "3001234567"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('201 al integrar Pedido o 503 mientras falta', () => pm.expect([201, 503]).to.include(pm.response.code));
+      if (pm.response.code === 201) pm.environment.set('deliveryId', pm.response.json().datos.id_entrega);
+    language: text/javascript
+order: 2000

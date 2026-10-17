@@ -1,0 +1,2 @@
+$kind: collection
+description: CRUD REST de Categorías, Usuarios y Roles, Horarios, Pagos y Entregas. Ejecutar con el ambiente PoliRestaurante local.

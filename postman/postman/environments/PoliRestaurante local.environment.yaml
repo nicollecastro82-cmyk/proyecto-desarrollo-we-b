@@ -1,0 +1,38 @@
+name: PoliRestaurante local
+values:
+  - key: baseUrl
+    value: 'http://127.0.0.1:5000'
+  - key: categoryId
+    value: ''
+  - key: roleId
+    value: ''
+  - key: employeeRoleId
+    value: ''
+  - key: courierRoleId
+    value: ''
+  - key: userId
+    value: ''
+  - key: courierId
+    value: ''
+  - key: scheduleId
+    value: ''
+  - key: orderId
+    value: '1'
+  - key: paymentId
+    value: ''
+  - key: deliveryId
+    value: ''
+  - key: categoryName
+    value: ''
+  - key: mesaId
+    value: ''
+  - key: mesaNumber
+    value: ''
+  - key: mesaUpdatedNumber
+    value: ''
+  - key: productCategoryId
+    value: '2'
+  - key: productId
+    value: ''
+  - key: productName
+    value: ''

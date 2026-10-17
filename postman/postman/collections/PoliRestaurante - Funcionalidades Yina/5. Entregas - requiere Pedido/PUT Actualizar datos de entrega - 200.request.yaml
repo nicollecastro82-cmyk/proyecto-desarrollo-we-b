@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/entregas/{{deliveryId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "direccion_entrega": "Carrera 20 # 30-40",
+      "telefono_contacto": "3111234567",
+      "observacion": "Portería"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/mesas/{{mesaId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "numero_mesa": {{mesaUpdatedNumber}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Número actualizado', () => pm.expect(pm.response.json().numero_mesa).to.eql(Number(pm.environment.get('mesaUpdatedNumber'))));
+    language: text/javascript
+order: 4000

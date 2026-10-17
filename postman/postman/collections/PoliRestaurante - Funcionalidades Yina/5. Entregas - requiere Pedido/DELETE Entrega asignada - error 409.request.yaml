@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/entregas/{{deliveryId}}"
+method: DELETE
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 409', () => pm.response.to.have.status(409));
+    language: text/javascript
+order: 5000

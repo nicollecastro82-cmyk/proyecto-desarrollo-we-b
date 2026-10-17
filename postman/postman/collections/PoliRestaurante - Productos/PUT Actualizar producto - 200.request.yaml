@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/productos/{{productId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "descripcion": "Actualizado desde Postman",
+      "precio": "26000.50"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Precio actualizado', () => pm.expect(pm.response.json().precio).to.eql('26000.50')); 
+    language: text/javascript
+order: 6000

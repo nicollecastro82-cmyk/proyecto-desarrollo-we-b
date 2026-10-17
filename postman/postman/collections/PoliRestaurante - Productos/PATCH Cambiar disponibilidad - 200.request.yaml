@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/productos/{{productId}}/disponibilidad"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "disponible": false
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('No disponible', () => pm.expect(pm.response.json().disponible).to.eql(false));
+    language: text/javascript
+order: 7000
