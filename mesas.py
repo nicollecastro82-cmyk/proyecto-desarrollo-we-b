@@ -105,3 +105,20 @@ def ocupar_mesa(id_mesa):
 
 def liberar_mesa(id_mesa):
     return cambiar_estado(id_mesa, "libre")
+
+
+def eliminar_mesa(id_mesa):
+    mesa, error = consultar_mesa(id_mesa)
+    if error:
+        return None, error
+    if mesa.estado == "ocupada":
+        return None, f"La mesa {mesa.numero_mesa} está ocupada y no se puede eliminar."
+
+    numero = mesa.numero_mesa
+    db.session.delete(mesa)
+    try:
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return None, f"No fue posible eliminar la mesa. Detalle: {e}"
+    return numero, None
