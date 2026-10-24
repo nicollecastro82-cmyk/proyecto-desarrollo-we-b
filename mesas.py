@@ -135,3 +135,22 @@ def ocupar_mesa(id_mesa):
 
 def liberar_mesa(id_mesa):
     return cambiar_estado(id_mesa, EstadoMesa.LIBRE.value)
+
+
+def eliminar_mesa(id_mesa):
+    mesa, error = consultar_mesa(id_mesa)
+    if error:
+        return None, error
+    if mesa.estado == EstadoMesa.OCUPADA:
+        return None, f"La mesa {mesa.numero_mesa} esta ocupada y no se puede eliminar."
+    if mesa.pedidos:
+        return None, f"La mesa {mesa.numero_mesa} tiene pedidos asociados y no se puede eliminar."
+
+    numero = mesa.numero_mesa
+    db.session.delete(mesa)
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return None, "No fue posible eliminar la mesa."
+    return numero, None
