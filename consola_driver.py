@@ -581,18 +581,15 @@ def menu_driver_horarios(conexion):
     )
 
 
-# Dependencia Pedido ---------------------------------------------------------
+# Consulta de la entidad compartida Pedido ----------------------------------
 
 
 def obtener_pedido(conexion, pedido_id):
     try:
         with conexion.cursor() as cursor:
-            cursor.execute("SELECT to_regclass('public.pedido') AS tabla")
-            if cursor.fetchone()["tabla"] is None:
-                print("No existe la tabla compartida pedido; no se puede crear el registro.")
-                return None
             cursor.execute(
-                "SELECT id_pedido, tipo FROM pedido WHERE id_pedido = %s", (pedido_id,)
+                "SELECT id_pedido, tipo, estado FROM pedido WHERE id_pedido = %s",
+                (pedido_id,),
             )
             pedido = cursor.fetchone()
         if pedido is None:

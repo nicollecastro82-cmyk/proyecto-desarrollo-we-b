@@ -9,6 +9,8 @@ from datetime import date
 from uuid import uuid4
 
 from app import app
+from extensions import db
+from models import EstadoPedido, Pedido, TipoPedido
 
 
 def expect(response, expected_status, label):
@@ -177,35 +179,80 @@ def run():
         "desactivar usuario de prueba",
     )
 
+    with app.app_context():
+        order = Pedido(
+            tipo=TipoPedido.DOMICILIO,
+            estado=EstadoPedido.PENDIENTE,
+            valor_total="10000.00",
+            observaciones=f"Prueba PostgreSQL {suffix}",
+        )
+        db.session.add(order)
+        db.session.commit()
+        order_id = order.id_pedido
+
     expect(client.get("/api/pagos"), 200, "listar pagos")
-    expect(client.get("/api/entregas"), 200, "listar entregas")
-    payment_dependency = expect(
+    payment = expect(
         client.post(
             "/api/pagos",
-            json={"id_pedido": 1, "metodo": "EFECTIVO", "valor": 10000},
+            json={"id_pedido": order_id, "metodo": "EFECTIVO", "valor": 10000},
         ),
-        503,
-        "dependencia Pedido para pagos",
+        201,
+        "crear pago relacionado con Pedido",
+    )["datos"]
+    expect(client.get(f"/api/pagos/{payment['id_pago']}"), 200, "consultar pago")
+    expect(
+        client.patch(f"/api/pagos/{payment['id_pago']}", json={"valor": 11000}),
+        200,
+        "actualizar pago pendiente",
     )
-    delivery_dependency = expect(
+    expect(
+        client.delete(f"/api/pagos/{payment['id_pago']}"),
+        200,
+        "eliminar pago pendiente temporal",
+    )
+
+    expect(client.get("/api/entregas"), 200, "listar entregas")
+    delivery = expect(
         client.post(
             "/api/entregas",
             json={
-                "id_pedido": 1,
+                "id_pedido": order_id,
                 "direccion_entrega": "Dirección de prueba",
                 "telefono_contacto": "3000000000",
             },
         ),
-        503,
-        "dependencia Pedido para entregas",
+        201,
+        "crear entrega relacionada con Pedido",
+    )["datos"]
+    expect(
+        client.get(f"/api/entregas/{delivery['id_entrega']}"),
+        200,
+        "consultar entrega",
     )
-    if payment_dependency["error"]["codigo"] != "ORDER_DEPENDENCY_UNAVAILABLE":
-        raise AssertionError("Pagos no informó correctamente la falta de Pedido.")
-    if delivery_dependency["error"]["codigo"] != "ORDER_DEPENDENCY_UNAVAILABLE":
-        raise AssertionError("Entregas no informó correctamente la falta de Pedido.")
+    expect(
+        client.patch(
+            f"/api/entregas/{delivery['id_entrega']}",
+            json={"direccion_entrega": "Dirección de prueba actualizada"},
+        ),
+        200,
+        "actualizar entrega pendiente",
+    )
+    expect(
+        client.delete(f"/api/entregas/{delivery['id_entrega']}"),
+        200,
+        "eliminar entrega temporal",
+    )
+
+    with app.app_context():
+        order = db.session.get(Pedido, order_id)
+        db.session.delete(order)
+        db.session.commit()
 
     print("Prueba PostgreSQL completada correctamente.")
-    print(f"Datos trazables: sufijo={suffix}, mesa_id={table_id}, usuario_id={user_id}")
+    print(
+        f"Datos trazables: sufijo={suffix}, mesa_id={table_id}, "
+        f"usuario_id={user_id}, pedido_temporal_eliminado={order_id}"
+    )
 
 
 if __name__ == "__main__":

@@ -167,8 +167,8 @@
       ]
     },
     {
-      "name": "4. Pagos - requiere Pedido",
-      "description": "Estas solicitudes funcionarán con 201/200 cuando la otra integrante integre la tabla pedido y orderId sea válido. Actualmente la creación devuelve 503 documentado.",
+      "name": "4. Pagos",
+      "description": "La tabla pedido ya está integrada. Configura orderId con el ID de un pedido existente antes de ejecutar esta carpeta.",
       "item": [
         {
           "name": "GET Listar pagos - 200",
@@ -176,9 +176,9 @@
           "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
         },
         {
-          "name": "POST Crear pago - 201 o dependencia 503",
+          "name": "POST Crear pago - 201",
           "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_pedido\": {{orderId}},\n  \"metodo\": \"PSE\",\n  \"valor\": 25000\n}"}, "url": "{{baseUrl}}/api/pagos"},
-          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 al integrar Pedido o 503 mientras falta', () => pm.expect([201, 503]).to.include(pm.response.code));", "if (pm.response.code === 201) pm.environment.set('paymentId', pm.response.json().datos.id_pago);"], "type": "text/javascript"}}]
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('paymentId', pm.response.json().datos.id_pago);"], "type": "text/javascript"}}]
         },
         {
           "name": "PUT Actualizar pago pendiente - 200",
@@ -198,8 +198,8 @@
       ]
     },
     {
-      "name": "5. Entregas - requiere Pedido",
-      "description": "Estas solicitudes funcionarán al integrar la tabla pedido con un pedido DOMICILIO válido.",
+      "name": "5. Entregas",
+      "description": "La tabla pedido ya está integrada. Configura orderId con el ID de un pedido DOMICILIO existente.",
       "item": [
         {
           "name": "GET Listar entregas - 200",
@@ -207,9 +207,9 @@
           "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
         },
         {
-          "name": "POST Crear entrega - 201 o dependencia 503",
+          "name": "POST Crear entrega - 201",
           "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_pedido\": {{orderId}},\n  \"direccion_entrega\": \"Calle 10 # 20-30\",\n  \"telefono_contacto\": \"3001234567\"\n}"}, "url": "{{baseUrl}}/api/entregas"},
-          "event": [{"listen": "test", "script": {"exec": ["pm.test('201 al integrar Pedido o 503 mientras falta', () => pm.expect([201, 503]).to.include(pm.response.code));", "if (pm.response.code === 201) pm.environment.set('deliveryId', pm.response.json().datos.id_entrega);"], "type": "text/javascript"}}]
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('deliveryId', pm.response.json().datos.id_entrega);"], "type": "text/javascript"}}]
         },
         {
           "name": "PUT Actualizar datos de entrega - 200",

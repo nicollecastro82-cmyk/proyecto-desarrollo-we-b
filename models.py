@@ -26,6 +26,20 @@ class EstadoEntrega(str, enum.Enum):
     CON_INCIDENCIA = "CON_INCIDENCIA"
 
 
+class TipoPedido(str, enum.Enum):
+    SALON = "SALON"
+    PARA_LLEVAR = "PARA_LLEVAR"
+    DOMICILIO = "DOMICILIO"
+
+
+class EstadoPedido(str, enum.Enum):
+    PENDIENTE = "PENDIENTE"
+    EN_PREPARACION = "EN_PREPARACION"
+    LISTO = "LISTO"
+    ENTREGADO = "ENTREGADO"
+    CANCELADO = "CANCELADO"
+
+
 class Categoria(db.Model):
     __tablename__ = "categoria"
 
@@ -77,6 +91,18 @@ class Usuario(db.Model):
     horarios = db.relationship("HorarioEmpleado", back_populates="usuario", lazy="selectin")
     pagos_confirmados = db.relationship("Pago", back_populates="usuario_confirma")
     entregas_asignadas = db.relationship("Entrega", back_populates="domiciliario")
+    pedidos_atendidos = db.relationship(
+        "Pedido",
+        foreign_keys="Pedido.id_mesero",
+        back_populates="mesero",
+        lazy="selectin",
+    )
+    pedidos_realizados = db.relationship(
+        "Pedido",
+        foreign_keys="Pedido.id_cliente",
+        back_populates="cliente",
+        lazy="selectin",
+    )
 
     def to_dict(self):
         return {
@@ -123,12 +149,93 @@ class HorarioEmpleado(db.Model):
         }
 
 
+class Pedido(db.Model):
+    __tablename__ = "pedido"
+
+    id_pedido = db.Column(db.Integer, primary_key=True)
+    id_mesa = db.Column(
+        db.Integer,
+        db.ForeignKey("mesa.id_mesa", ondelete="RESTRICT"),
+        index=True,
+    )
+    id_mesero = db.Column(
+        db.Integer,
+        db.ForeignKey("usuario.id_usuario", ondelete="RESTRICT"),
+        index=True,
+    )
+    id_cliente = db.Column(
+        db.Integer,
+        db.ForeignKey("usuario.id_usuario", ondelete="RESTRICT"),
+        index=True,
+    )
+    tipo = db.Column(db.Enum(TipoPedido, name="tipo_pedido"), nullable=False)
+    estado = db.Column(
+        db.Enum(EstadoPedido, name="estado_pedido"),
+        nullable=False,
+        default=EstadoPedido.PENDIENTE,
+        server_default=EstadoPedido.PENDIENTE.value,
+        index=True,
+    )
+    valor_total = db.Column(
+        db.Numeric(12, 2), nullable=False, default=0, server_default="0"
+    )
+    observaciones = db.Column(db.String(500))
+    fecha_creacion = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.now,
+        server_default=func.now(),
+    )
+    fecha_ultima_actualizacion = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.now,
+        onupdate=datetime.now,
+        server_default=func.now(),
+    )
+
+    mesa = db.relationship("Mesa", back_populates="pedidos")
+    mesero = db.relationship(
+        "Usuario", foreign_keys=[id_mesero], back_populates="pedidos_atendidos"
+    )
+    cliente = db.relationship(
+        "Usuario", foreign_keys=[id_cliente], back_populates="pedidos_realizados"
+    )
+    pago = db.relationship("Pago", back_populates="pedido", uselist=False)
+    entrega = db.relationship("Entrega", back_populates="pedido", uselist=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "valor_total >= 0", name="ck_pedido_valor_total_no_negativo"
+        ),
+    )
+
+    def to_dict(self):
+        return {
+            "id_pedido": self.id_pedido,
+            "id_mesa": self.id_mesa,
+            "id_mesero": self.id_mesero,
+            "id_cliente": self.id_cliente,
+            "tipo": self.tipo.value,
+            "estado": self.estado.value,
+            "valor_total": str(self.valor_total),
+            "observaciones": self.observaciones,
+            "fecha_creacion": self.fecha_creacion.isoformat(),
+            "fecha_ultima_actualizacion": self.fecha_ultima_actualizacion.isoformat(),
+        }
+
+
 class Pago(db.Model):
     __tablename__ = "pago"
 
     id_pago = db.Column(db.Integer, primary_key=True)
-    # La FK a pedido se añadirá al integrar el modelo compartido de la otra integrante.
-    id_pedido = db.Column(db.Integer, nullable=False, unique=True, index=True)
+    id_pedido = db.Column(
+        db.Integer,
+        db.ForeignKey("pedido.id_pedido", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
     id_usuario_confirma = db.Column(
         db.Integer,
         db.ForeignKey("usuario.id_usuario", ondelete="RESTRICT"),
@@ -152,6 +259,7 @@ class Pago(db.Model):
     fecha_pago = db.Column(db.DateTime)
 
     usuario_confirma = db.relationship("Usuario", back_populates="pagos_confirmados")
+    pedido = db.relationship("Pedido", back_populates="pago")
 
     __table_args__ = (CheckConstraint("valor > 0", name="ck_pago_valor_positivo"),)
 
@@ -173,8 +281,13 @@ class Entrega(db.Model):
     __tablename__ = "entrega"
 
     id_entrega = db.Column(db.Integer, primary_key=True)
-    # La FK a pedido se añadirá al integrar el modelo compartido de la otra integrante.
-    id_pedido = db.Column(db.Integer, nullable=False, unique=True, index=True)
+    id_pedido = db.Column(
+        db.Integer,
+        db.ForeignKey("pedido.id_pedido", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
     id_domiciliario = db.Column(
         db.Integer,
         db.ForeignKey("usuario.id_usuario", ondelete="RESTRICT"),
@@ -194,6 +307,7 @@ class Entrega(db.Model):
     observacion = db.Column(db.String(500))
 
     domiciliario = db.relationship("Usuario", back_populates="entregas_asignadas")
+    pedido = db.relationship("Pedido", back_populates="entrega")
 
     def to_dict(self):
         return {

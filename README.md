@@ -10,8 +10,9 @@ instancias de SQLAlchemy.
 - **Nicole:** mesas.
 - **Productos:** catálogo y disponibilidad de productos.
 
-`Pedido` y `DetallePedido` no están implementados en este repositorio integrado. No
-se creó una versión paralela porque son dependencias compartidas pendientes.
+`Pedido` está integrado como entidad compartida para relacionar Mesas, Usuarios,
+Pagos y Entregas. `DetallePedido` e `HistorialEstado` permanecen fuera de este alcance
+y deberán integrarse con las funcionalidades de pedidos correspondientes.
 
 ## Tecnologías
 
@@ -41,12 +42,17 @@ DATABASE_URL=postgresql+psycopg://postgres:CONTRASEÑA@localhost:5433/polirestau
 
 En PostgreSQL existen las tablas de Yina (`categoria`, `tipo_usuario`, `usuario`,
 `horario_empleado`, `pago` y `entrega`) y las tablas integradas `mesa` y `producto`.
-Todavía no existe `pedido`.
+También existe la tabla compartida `pedido`.
 
 La migración `migrations/001_crear_mesa_y_producto.sql` se ejecutó el 17 de octubre
 de 2026 con autorización previa. Creó `mesa`, `producto`, el enum `estado_mesa`, sus
 restricciones y la FK de producto hacia categoría sin modificar datos anteriores.
 Consulta `migrations/README.md` para ver el registro técnico.
+
+La migración `migrations/002_crear_pedido.sql` se ejecutó el 23 de octubre de 2026.
+Creó `pedido`, los enums
+`tipo_pedido` y `estado_pedido`, sus relaciones con Mesa y Usuario, y las claves
+foráneas desde Pago y Entrega.
 
 Hay una diferencia conocida y compatible: `categoria.nombre` es `varchar(100)` en la
 base actual y `varchar(80)` en el documento oficial. La API limita los nombres a 80,
@@ -98,9 +104,8 @@ Para demostrar únicamente el CRUD con el ORM:
 
 Los dos menús permiten escoger Categorías, Usuarios y roles, Horarios de empleados,
 Pagos o Entregas. En los campos de actualización, `Enter` conserva el valor y `-`
-elimina los campos opcionales que lo indiquen. Pagos y Entregas no podrán crear
-registros hasta integrar la tabla compartida `pedido`; ambos menús informan esa
-dependencia sin inventar otro modelo de Pedido.
+elimina los campos opcionales que lo indiquen. Pagos y Entregas validan directamente
+los registros de la tabla oficial `pedido`.
 
 ## Endpoints
 
@@ -177,19 +182,16 @@ El modelo Python conserva los nombres que usó el módulo original (`nombre`,
 `descripcion`, `precio`) y los mapea a las columnas oficiales
 `nombre_producto`, `descripcion_producto` y `precio_producto`.
 
-## Dependencia pendiente de Pedido
+## Entidad compartida Pedido
 
-Pagos necesita que `pedido` contenga al menos `id_pedido`. Entregas necesita además
-`tipo`, con el valor `DOMICILIO` para poder crear una entrega. El contrato oficial
-completo también incluye `id_mesa`, `id_mesero`, `id_cliente`, `estado`, `valor_total`,
-`observaciones`, `fecha_creacion` y `fecha_ultima_actualizacion`.
+El modelo `Pedido` respeta el documento oficial e incluye `id_pedido`, `id_mesa`,
+`id_mesero`, `id_cliente`, `tipo`, `estado`, `valor_total`, `observaciones`,
+`fecha_creacion` y `fecha_ultima_actualizacion`.
 
-Mientras la tabla no exista:
-
-- `POST /api/pagos` responde `503 ORDER_DEPENDENCY_UNAVAILABLE`.
-- `POST /api/entregas` responde `503 ORDER_DEPENDENCY_UNAVAILABLE`.
-- Consultar registros de pago o entrega existentes sí está disponible.
-- Las claves foráneas de `pago.id_pedido` y `entrega.id_pedido` siguen pendientes.
+Los tipos permitidos son `SALON`, `PARA_LLEVAR` y `DOMICILIO`. Los estados son
+`PENDIENTE`, `EN_PREPARACION`, `LISTO`, `ENTREGADO` y `CANCELADO`. Pagos y Entregas
+usan relaciones ORM y claves foráneas reales hacia Pedido. Una entrega solo puede
+registrarse para un pedido de tipo `DOMICILIO`.
 
 ## Pruebas automáticas
 
@@ -206,14 +208,19 @@ integración identificables:
 ```powershell
 python -m tests.postgresql_smoke
 python -m tests.productos_postgresql_smoke
+python -m tests.pedido_postgresql_smoke
 ```
 
 Esta prueba reutiliza por defecto la categoría existente `Bebidas` con ID `2`,
 desactiva por API el producto y usuario creados, elimina solo su horario temporal y
 deja la mesa creada en `FUERA_DE_SERVICIO`, pues el módulo de Mesas no define
-eliminación. Puedes seleccionar otra categoría activa mediante `PRODUCT_CATEGORY_ID`.
+eliminación. También crea un Pedido temporal, prueba los CRUD de Pago y Entrega y
+elimina ese Pedido al finalizar. Puedes seleccionar otra categoría activa mediante
+`PRODUCT_CATEGORY_ID`.
 El segundo comando prueba únicamente POST, GET, PUT, PATCH y DELETE lógico de
-Productos sin crear ni modificar categorías.
+Productos sin crear ni modificar categorías. El tercer comando prueba Pedido, Pago y
+Entrega con las claves foráneas reales y elimina todos sus registros temporales al
+finalizar.
 
 ## Postman
 
@@ -235,7 +242,8 @@ Usa una base de desarrollo. Las colecciones generan nombres y números de prueba
 Productos verifica primero que `productCategoryId` corresponda a una categoría activa
 y desactiva al final únicamente el producto de prueba; nunca crea, modifica ni
 desactiva categorías. Mesas deja la mesa creada en `FUERA_DE_SERVICIO` porque ese
-módulo no contempla eliminación.
+módulo no contempla eliminación. Para las carpetas Pagos y Entregas, configura
+`orderId` con un Pedido existente; para Entregas debe ser de tipo `DOMICILIO`.
 
 ## Archivos principales
 
@@ -245,14 +253,13 @@ consola.py                Menú para elegir entre las dos tareas CRUD
 consola_driver.py         CRUD directo con psycopg y SQL parametrizado
 consola_orm.py            Entrada independiente al CRUD con SQLAlchemy ORM
 extensions.py             Única instancia compartida de SQLAlchemy
-models.py                 Modelos de las funcionalidades de Yina
+models.py                 Modelos de Yina y entidad compartida Pedido
 routes/                    Blueprints REST de Yina
 api_mesas.py              Blueprint REST de Mesas
 mesas.py                  Modelo y lógica de Mesa
 main.py                   Blueprint REST de Productos
 producto.py               Modelo ORM de Producto
 catalogo_dao.py           Acceso a datos de Productos y Categoría
-shared_dependencies.py    Contrato temporal con Pedido
 tests/                     Pruebas automáticas
 postman/                   Colecciones y ambiente
 migrations/               Migraciones SQL y registro de su ejecución

@@ -5,8 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from api_utils import ApiError, json_body, positive_int, text_value
 from extensions import db
-from models import Entrega, EstadoEntrega, Usuario
-from shared_dependencies import require_order
+from models import Entrega, EstadoEntrega, Pedido, TipoPedido, Usuario
 
 
 entregas_bp = Blueprint("entregas", __name__, url_prefix="/api/entregas")
@@ -59,8 +58,10 @@ def validate_courier(user_id):
 
 
 def validate_delivery_order(order_id):
-    order = require_order(order_id, {"tipo"})
-    if order["tipo"].upper() != "DOMICILIO":
+    order = db.session.get(Pedido, order_id)
+    if order is None:
+        raise ApiError("Pedido no encontrado.", 404, "ORDER_NOT_FOUND")
+    if order.tipo != TipoPedido.DOMICILIO:
         raise ApiError(
             "Solo los pedidos de tipo DOMICILIO pueden tener entrega.",
             422,

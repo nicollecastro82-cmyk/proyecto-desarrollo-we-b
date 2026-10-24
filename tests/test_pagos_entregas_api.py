@@ -1,11 +1,10 @@
 import unittest
 
-from sqlalchemy import text
 from werkzeug.security import generate_password_hash
 
 from app import create_app, seed_default_roles
 from extensions import db
-from models import TipoUsuario, Usuario
+from models import EstadoPedido, Pedido, TipoPedido, TipoUsuario, Usuario
 
 
 class PagosEntregasApiTestCase(unittest.TestCase):
@@ -17,19 +16,24 @@ class PagosEntregasApiTestCase(unittest.TestCase):
         self.context.push()
         db.create_all()
         seed_default_roles()
-        db.session.execute(
-            text(
-                "CREATE TABLE pedido ("
-                "id_pedido INTEGER PRIMARY KEY, tipo VARCHAR(30) NOT NULL, "
-                "estado VARCHAR(30) NOT NULL)"
-            )
-        )
-        db.session.execute(
-            text(
-                "INSERT INTO pedido (id_pedido, tipo, estado) VALUES "
-                "(1, 'DOMICILIO', 'PENDIENTE'), (2, 'SALON', 'PENDIENTE'), "
-                "(3, 'DOMICILIO', 'LISTO')"
-            )
+        db.session.add_all(
+            [
+                Pedido(
+                    id_pedido=1,
+                    tipo=TipoPedido.DOMICILIO,
+                    estado=EstadoPedido.PENDIENTE,
+                ),
+                Pedido(
+                    id_pedido=2,
+                    tipo=TipoPedido.SALON,
+                    estado=EstadoPedido.PENDIENTE,
+                ),
+                Pedido(
+                    id_pedido=3,
+                    tipo=TipoPedido.DOMICILIO,
+                    estado=EstadoPedido.LISTO,
+                ),
+            ]
         )
         self.confirmer = self.create_user("MESERO", "mesero")
         self.courier = self.create_user("DOMICILIARIO", "domiciliario")
@@ -136,16 +140,35 @@ class PagosEntregasApiTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertEqual(response.get_json()["error"]["codigo"], "ORDER_IS_NOT_DELIVERY")
 
-    def test_informa_dependencia_cuando_pedido_no_existe(self):
-        db.session.execute(text("DROP TABLE pedido"))
-        db.session.commit()
+    def test_rechaza_pago_para_pedido_inexistente(self):
         response = self.client.post(
+            "/api/pagos",
+            json={"id_pedido": 999, "metodo": "EFECTIVO", "valor": 10000},
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            response.get_json()["error"]["codigo"], "ORDER_NOT_FOUND"
+        )
+
+    def test_modelo_pedido_relaciona_pago_y_entrega(self):
+        payment = self.client.post(
             "/api/pagos", json={"id_pedido": 1, "metodo": "EFECTIVO", "valor": 10000}
         )
-        self.assertEqual(response.status_code, 503)
-        self.assertEqual(
-            response.get_json()["error"]["codigo"], "ORDER_DEPENDENCY_UNAVAILABLE"
+        delivery = self.client.post(
+            "/api/entregas",
+            json={
+                "id_pedido": 1,
+                "direccion_entrega": "Calle 10 # 20-30",
+                "telefono_contacto": "3001234567",
+            },
         )
+
+        self.assertEqual(payment.status_code, 201)
+        self.assertEqual(delivery.status_code, 201)
+        db.session.expire_all()
+        order = db.session.get(Pedido, 1)
+        self.assertEqual(order.pago.id_pedido, order.id_pedido)
+        self.assertEqual(order.entrega.id_pedido, order.id_pedido)
 
 
 if __name__ == "__main__":

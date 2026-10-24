@@ -17,13 +17,23 @@ La migración creó:
 No eliminó ni actualizó datos existentes. Se verificaron las columnas, PK, FK,
 restricciones, enum e índice mediante introspección de PostgreSQL.
 
-## Dependencia pendiente
+## 002 - Pedido
 
-La migración no crea `pedido`, porque esa entidad pertenece al módulo compartido que
-aún no está implementado. Cuando se integre, se deberá validar como mínimo el contrato
-`id_pedido`, `tipo` y `estado`, y después preparar otra migración para agregar las
-claves foráneas `pago.id_pedido -> pedido.id_pedido` y
-`entrega.id_pedido -> pedido.id_pedido`.
+`002_crear_pedido.sql` se ejecutó correctamente el 23 de octubre de 2026 en la base
+`polirestaurante`, esquema `public`, PostgreSQL 18.4. Se volvió a ejecutar para
+comprobar que fuera idempotente y no duplicó objetos ni modificó datos.
+
+La migración implementa la entidad compartida definida en el modelo
+relacional oficial. Crea los enums `tipo_pedido` y `estado_pedido`, la tabla `pedido`,
+sus claves foráneas hacia `mesa` y `usuario`, los índices y la actualización automática
+de `fecha_ultima_actualizacion`.
+
+También formaliza las relaciones uno a uno:
+
+- `pago.id_pedido -> pedido.id_pedido`.
+- `entrega.id_pedido -> pedido.id_pedido`.
+
+La migración no elimina ni actualiza registros existentes.
 
 La columna `categoria.nombre` mide actualmente 100 caracteres en PostgreSQL, mientras
 el documento oficial indica 80. La API ya limita los nombres nuevos a 80. No se

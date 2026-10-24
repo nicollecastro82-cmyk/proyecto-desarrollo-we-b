@@ -6,8 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from api_utils import ApiError, json_body, positive_int, text_value
 from extensions import db
-from models import EstadoPago, MetodoPago, Pago, Usuario
-from shared_dependencies import require_order
+from models import EstadoPago, MetodoPago, Pago, Pedido, Usuario
 
 
 pagos_bp = Blueprint("pagos", __name__, url_prefix="/api/pagos")
@@ -18,6 +17,13 @@ def find_payment_or_404(payment_id):
     if payment is None:
         raise ApiError("Pago no encontrado.", 404, "PAYMENT_NOT_FOUND")
     return payment
+
+
+def find_order_or_404(order_id):
+    order = db.session.get(Pedido, order_id)
+    if order is None:
+        raise ApiError("Pedido no encontrado.", 404, "ORDER_NOT_FOUND")
+    return order
 
 
 def parse_enum(value, enum_class, field):
@@ -100,7 +106,7 @@ def create_payment():
         {"id_pedido", "metodo", "valor"},
     )
     order_id = positive_int(data["id_pedido"], "id_pedido")
-    require_order(order_id)
+    find_order_or_404(order_id)
     method = parse_enum(data["metodo"], MetodoPago, "metodo")
     amount = parse_amount(data["valor"])
     reference = text_value(

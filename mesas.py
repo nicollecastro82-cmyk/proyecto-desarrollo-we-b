@@ -25,6 +25,7 @@ class Mesa(db.Model):
         default=EstadoMesa.LIBRE,
         server_default=EstadoMesa.LIBRE.value,
     )
+    pedidos = db.relationship("Pedido", back_populates="mesa", lazy="selectin")
 
 
 def normalizar_estado(estado):
