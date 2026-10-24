@@ -6,6 +6,7 @@ from mesas import (
     cambiar_estado,
     consultar_mesa,
     crear_mesa,
+    eliminar_mesa,
     listar_mesas,
     normalizar_estado,
 )
@@ -104,6 +105,12 @@ def modificar_estado(id_mesa):
         return respuesta_error(error)
     return jsonify(mesa_a_dict(mesa)), 200
 
+@mesas_bp.delete("/mesas/<int:id_mesa>")
+def borrar_mesa(id_mesa):
+    numero, error = eliminar_mesa(id_mesa)
+    if error:
+        return respuesta_error(error)
+    return jsonify({"mensaje": f"Mesa {numero} eliminada."}), 200
 
 if __name__ == "__main__":
     from app import create_app
