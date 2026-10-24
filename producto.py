@@ -28,3 +28,4 @@ class Producto(db.Model):
     )
 
     categoria = db.relationship("Categoria")
+    detalles = db.relationship("DetallePedido", back_populates="producto")

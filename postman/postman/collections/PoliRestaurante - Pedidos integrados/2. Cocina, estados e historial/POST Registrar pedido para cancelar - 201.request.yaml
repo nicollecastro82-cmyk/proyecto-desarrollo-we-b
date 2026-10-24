@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "tipo": "SALON",
+      "id_mesa": {{mesaId}},
+      "id_mesero": {{userId}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) pm.environment.set('cancelOrderId', pm.response.json().datos.id_pedido);
+    language: text/javascript
+order: 7000

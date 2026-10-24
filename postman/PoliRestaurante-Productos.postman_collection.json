@@ -2,14 +2,14 @@
   "info": {
     "_postman_id": "9e63c9d8-acde-443b-9d38-4cf4a30f9198",
     "name": "PoliRestaurante - Productos",
-    "description": "Pruebas del módulo de Productos integrado en app.py. Reutiliza una categoría administrada por el CRUD de Yina; por defecto usa Bebidas (ID 2) y primero verifica que exista y siga activa.",
+    "description": "Pruebas del módulo de Productos integrado en app.py. Reutiliza una categoría administrada por el CRUD de Yina y primero verifica que exista y siga activa. Bebidas (ID 2) se encontró inactiva el 24/10/2026, por lo que el ambiente usa actualmente la categoría activa ID 7.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
       "name": "Precondición - GET Categoría existente activa - 200",
       "event": [
-        {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["if (!pm.environment.get('productCategoryId')) pm.environment.set('productCategoryId', '2');"]}},
+        {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["if (!pm.environment.get('productCategoryId')) pm.environment.set('productCategoryId', '7');"]}},
         {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('La categoría existe y está activa', () => { const c = pm.response.json().datos; pm.expect(c.id_categoria).to.eql(Number(pm.environment.get('productCategoryId'))); pm.expect(c.activo).to.eql(true); pm.expect(c.nombre).to.be.a('string').and.not.empty; });"]}}
       ],
       "request": {

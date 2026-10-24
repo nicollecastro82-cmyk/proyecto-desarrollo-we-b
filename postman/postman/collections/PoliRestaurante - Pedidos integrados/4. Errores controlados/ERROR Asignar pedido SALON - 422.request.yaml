@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{salonOrderId}}/domiciliario"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_domiciliario": {{courierId}}
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 422', () => pm.response.to.have.status(422));
+    language: text/javascript
+order: 3000

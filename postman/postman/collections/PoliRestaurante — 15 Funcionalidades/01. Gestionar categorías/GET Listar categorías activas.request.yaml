@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/categorias"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      const own = Number(pm.environment.get('categoryId'));
+      const categories = pm.response.json().datos;
+      const demoMap = {'Entradas [DEMO]':'demoCategoryEntradasId','Platos fuertes [DEMO]':'demoCategoryPlatosId','Bebidas [DEMO]':'demoCategoryBebidasId','Postres [DEMO]':'demoCategoryPostresId'};
+      Object.entries(demoMap).forEach(([name,key]) => { const c=categories.find(x => x.nombre===name && x.activo); if(c) pm.environment.set(key,c.id_categoria); });
+      const demoCategories = categories.filter(c => Object.prototype.hasOwnProperty.call(demoMap,c.nombre) && c.activo);
+      pm.test('Existen las cuatro categorías demo', () => pm.expect(demoCategories.length).to.eql(4));
+      const selected = categories.find(c => c.nombre === 'Entradas [DEMO]') || categories.find(c => c.activo && c.id_categoria !== own);
+      pm.test('Existe categoría activa para Producto', () => pm.expect(selected).to.exist);
+      if (selected) pm.environment.set('productCategoryId', selected.id_categoria);
+    language: text/javascript
+order: 3000

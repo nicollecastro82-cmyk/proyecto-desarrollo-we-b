@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/entregas/{{deliveryId}}/estado"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "estado": "EN_CAMINO"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 7000

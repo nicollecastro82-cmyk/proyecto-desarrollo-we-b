@@ -3,7 +3,7 @@ url: "{{baseUrl}}/api/categorias/{{productCategoryId}}"
 method: GET
 scripts:
   - type: beforeRequest
-    code: if (!pm.environment.get('productCategoryId')) pm.environment.set('productCategoryId', '2');
+    code: if (!pm.environment.get('productCategoryId')) pm.environment.set('productCategoryId', '7');
     language: text/javascript
   - type: afterResponse
     code: |-

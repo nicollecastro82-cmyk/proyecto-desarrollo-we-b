@@ -35,6 +35,21 @@ También formaliza las relaciones uno a uno:
 
 La migración no elimina ni actualiza registros existentes.
 
+## 003 - Detalle de pedido e historial
+
+`003_crear_detalle_e_historial.sql` completa las 11 tablas del modelo oficial con
+`detalle_pedido` e `historial_estado`. Incluye PK, FK, índices, cantidades positivas,
+precios no negativos y una línea única por producto dentro de cada pedido.
+
+Se ejecutó correctamente el 24 de octubre de 2026 sobre la base `polirestaurante`
+configurada en `.env`. Se ejecutó una segunda vez para comprobar su idempotencia y
+se verificaron por introspección las 11 tablas, las cuatro claves foráneas nuevas y
+el trigger. No se eliminaron ni modificaron registros existentes.
+
+El disparador `trg_detalle_recalcular_total` mantiene `pedido.valor_total` como la
+suma de `cantidad * precio_unitario` después de insertar, modificar o eliminar un
+detalle. La migración no elimina ni modifica registros existentes.
+
 La columna `categoria.nombre` mide actualmente 100 caracteres en PostgreSQL, mientras
 el documento oficial indica 80. La API ya limita los nombres nuevos a 80. No se
 ejecutó un `ALTER COLUMN`: reducir el tamaño requeriría una autorización estructural

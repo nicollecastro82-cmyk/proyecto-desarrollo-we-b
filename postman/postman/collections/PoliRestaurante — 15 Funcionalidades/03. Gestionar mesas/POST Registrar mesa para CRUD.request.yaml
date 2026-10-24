@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/mesas"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"numero_mesa":{{mesaCrudNumber}}}'
+scripts:
+  - type: beforeRequest
+    code: |-
+      const n = 100000 + Math.floor(Math.random() * 300000);
+      pm.environment.set('mesaCrudNumber', n);
+      pm.environment.set('mesaCrudUpdatedNumber', n + 1);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) pm.environment.set('mesaCrudId', pm.response.json().id_mesa);
+    language: text/javascript
+order: 1000

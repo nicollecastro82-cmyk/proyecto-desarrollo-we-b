@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{cancelOrderId}}"
+method: DELETE
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_usuario_cambio": {{userId}},
+      "observacion": "Cancelación controlada desde Postman"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Pedido cancelado', () => pm.expect(pm.response.json().datos.estado).to.eql('CANCELADO'));
+    language: text/javascript
+order: 8000

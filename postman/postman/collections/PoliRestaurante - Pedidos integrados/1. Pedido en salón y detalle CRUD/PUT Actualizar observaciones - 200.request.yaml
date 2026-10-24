@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{salonOrderId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "observaciones": "Sin cebolla"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

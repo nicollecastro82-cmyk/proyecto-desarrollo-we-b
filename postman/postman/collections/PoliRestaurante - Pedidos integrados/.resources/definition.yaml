@@ -1,0 +1,2 @@
+$kind: collection
+description: Pedidos de salón y domicilio, detalle, Cocina, cambios de estado, asignación e historial. Reutiliza mesa, producto y usuarios creados por las colecciones de sus módulos; no duplica esos CRUD.

@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"usuario_login":"{{employeeLogin}}","contrasena":"Incorrecta"}'
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 401', () => pm.response.to.have.status(401));
+    language: text/javascript
+order: 2000

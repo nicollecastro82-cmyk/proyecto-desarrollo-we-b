@@ -1,0 +1,286 @@
+{
+  "info": {
+    "_postman_id": "e5e34d98-720a-46c0-b5cb-cc26220c8e01",
+    "name": "PoliRestaurante - 15 funcionalidades E2E",
+    "description": "Colección ejecutable de principio a fin. Crea datos temporales identificables, demuestra las 15 funcionalidades en el orden correcto y termina con desactivación lógica de los datos administrativos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Preparación y CRUD administrativos",
+      "item": [
+        {
+          "name": "01 GET Salud - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/salud"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('PostgreSQL conectado', () => pm.expect(pm.response.json().base_datos).to.eql('conectada'));"]}}]
+        },
+        {
+          "name": "02 POST Crear categoría temporal - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"{{categoryName}}\",\n  \"activo\": true\n}"}, "url": "{{baseUrl}}/api/categorias"},
+          "event": [
+            {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["pm.environment.set('categoryName', 'Categoria E2E ' + Date.now());"]}},
+            {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('categoryId', pm.response.json().datos.id_categoria);"]}}
+          ]
+        },
+        {
+          "name": "03 PUT Actualizar categoría - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"{{categoryName}} actualizada\",\n  \"activo\": true\n}"}, "url": "{{baseUrl}}/api/categorias/{{categoryId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "04 GET Elegir categoría existente para Producto - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/categorias"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "const own = Number(pm.environment.get('categoryId'));", "const categories = pm.response.json().datos;", "const selected = categories.find(c => c.activo && c.id_categoria !== own);", "pm.test('Existe otra categoría activa', () => pm.expect(selected).to.exist);", "if (selected) pm.environment.set('productCategoryId', selected.id_categoria);"]}}]
+        },
+        {
+          "name": "05 GET Roles y guardar IDs - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/tipos-usuario"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "const roles = pm.response.json().datos;", "const mapping = {MESERO:'employeeRoleId', COCINA:'kitchenRoleId', CLIENTE:'clientRoleId', DOMICILIARIO:'courierRoleId'};", "Object.entries(mapping).forEach(([role,key]) => { const found = roles.find(r => r.descripcion === role); if (found) pm.environment.set(key, found.id_tipo_usuario); });", "pm.test('Cuatro roles disponibles', () => Object.values(mapping).forEach(key => pm.expect(pm.environment.get(key), key).to.not.be.empty));"]}}]
+        },
+        {
+          "name": "06 POST Crear mesero - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{employeeRoleId}},\n  \"nombre\": \"Mesero E2E\",\n  \"usuario_login\": \"{{employeeLogin}}\",\n  \"contrasena\": \"ClaveSegura123\",\n  \"correo\": \"{{employeeEmail}}\"\n}"}, "url": "{{baseUrl}}/api/usuarios"},
+          "event": [
+            {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["const run = Date.now();", "pm.environment.set('employeeLogin', 'mesero_e2e_' + run);", "pm.environment.set('employeeEmail', 'mesero_e2e_' + run + '@example.com');"]}},
+            {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('userId', pm.response.json().datos.id_usuario);"]}}
+          ]
+        },
+        {
+          "name": "07 POST Crear usuario Cocina - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{kitchenRoleId}},\n  \"nombre\": \"Cocina E2E\",\n  \"usuario_login\": \"{{kitchenLogin}}\",\n  \"contrasena\": \"ClaveSegura123\",\n  \"correo\": \"{{kitchenEmail}}\"\n}"}, "url": "{{baseUrl}}/api/usuarios"},
+          "event": [
+            {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["const run = Date.now();", "pm.environment.set('kitchenLogin', 'cocina_e2e_' + run);", "pm.environment.set('kitchenEmail', 'cocina_e2e_' + run + '@example.com');"]}},
+            {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('kitchenId', pm.response.json().datos.id_usuario);"]}}
+          ]
+        },
+        {
+          "name": "08 POST Crear cliente - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{clientRoleId}},\n  \"nombre\": \"Cliente E2E\",\n  \"usuario_login\": \"{{clientLogin}}\",\n  \"contrasena\": \"ClaveSegura123\",\n  \"correo\": \"{{clientEmail}}\"\n}"}, "url": "{{baseUrl}}/api/usuarios"},
+          "event": [
+            {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["const run = Date.now();", "pm.environment.set('clientLogin', 'cliente_e2e_' + run);", "pm.environment.set('clientEmail', 'cliente_e2e_' + run + '@example.com');"]}},
+            {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('clientId', pm.response.json().datos.id_usuario);"]}}
+          ]
+        },
+        {
+          "name": "09 POST Crear domiciliario - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{courierRoleId}},\n  \"nombre\": \"Domiciliario E2E\",\n  \"usuario_login\": \"{{courierLogin}}\",\n  \"contrasena\": \"ClaveSegura123\",\n  \"correo\": \"{{courierEmail}}\"\n}"}, "url": "{{baseUrl}}/api/usuarios"},
+          "event": [
+            {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["const run = Date.now();", "pm.environment.set('courierLogin', 'domiciliario_e2e_' + run);", "pm.environment.set('courierEmail', 'domiciliario_e2e_' + run + '@example.com');"]}},
+            {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('courierId', pm.response.json().datos.id_usuario);"]}}
+          ]
+        },
+        {
+          "name": "10 POST Iniciar sesión - 200",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"usuario_login\": \"{{employeeLogin}}\",\n  \"contrasena\": \"ClaveSegura123\"\n}"}, "url": "{{baseUrl}}/api/auth/login"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "11 POST Crear horario - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_usuario\": {{userId}},\n  \"fecha\": \"2099-10-24\",\n  \"hora_inicio\": \"08:00\",\n  \"hora_fin\": \"16:00\",\n  \"observacion\": \"Horario E2E\"\n}"}, "url": "{{baseUrl}}/api/horarios"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('scheduleId', pm.response.json().datos.id_horario);"]}}]
+        },
+        {
+          "name": "12 PUT Actualizar horario - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_usuario\": {{userId}},\n  \"fecha\": \"2099-10-24\",\n  \"hora_inicio\": \"08:00\",\n  \"hora_fin\": \"17:00\",\n  \"observacion\": \"Horario actualizado\"\n}"}, "url": "{{baseUrl}}/api/horarios/{{scheduleId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "13 DELETE Eliminar horario - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/horarios/{{scheduleId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "14 POST Crear producto usando categoría existente - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"{{productName}}\",\n  \"descripcion\": \"Producto E2E\",\n  \"precio\": 25000,\n  \"id_categoria\": {{productCategoryId}}\n}"}, "url": "{{baseUrl}}/productos"},
+          "event": [
+            {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["pm.environment.set('productName', 'Producto E2E ' + Date.now());"]}},
+            {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('productId', pm.response.json().id_producto);"]}}
+          ]
+        },
+        {
+          "name": "15 PUT Actualizar producto - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"descripcion\": \"Producto actualizado E2E\",\n  \"precio\": \"26000.50\"\n}"}, "url": "{{baseUrl}}/productos/{{productId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "16 POST Crear mesa - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"numero_mesa\": {{mesaNumber}}\n}"}, "url": "{{baseUrl}}/mesas"},
+          "event": [
+            {"listen": "prerequest", "script": {"type": "text/javascript", "exec": ["const number = 100000 + Math.floor(Math.random() * 800000);", "pm.environment.set('mesaNumber', number);", "pm.environment.set('mesaUpdatedNumber', number + 1);"]}},
+            {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('mesaId', pm.response.json().id_mesa);"]}}
+          ]
+        },
+        {
+          "name": "17 PUT Actualizar mesa - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"numero_mesa\": {{mesaUpdatedNumber}}\n}"}, "url": "{{baseUrl}}/mesas/{{mesaId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "1. Pedido en salón, detalle, Cocina, pago e historial",
+      "item": [
+        {
+          "name": "18 POST Pedido SALON - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"SALON\",\n  \"id_mesa\": {{mesaId}},\n  \"id_mesero\": {{userId}},\n  \"observaciones\": \"Pedido E2E\"\n}"}, "url": "{{baseUrl}}/api/pedidos"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const p=pm.response.json().datos; pm.environment.set('salonOrderId', p.id_pedido); pm.environment.set('orderId', p.id_pedido); }"]}}]
+        },
+        {
+          "name": "19 POST Agregar detalle - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_producto\": {{productId}},\n  \"cantidad\": 1\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const r=pm.response.json(); pm.environment.set('detailId', r.datos.id_detalle); pm.environment.set('orderTotal', r.valor_total); }"]}}]
+        },
+        {
+          "name": "20 PUT Actualizar detalle y total - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"cantidad\": 2,\n  \"comentarios\": \"Dos porciones E2E\"\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "if (pm.response.code === 200) pm.environment.set('orderTotal', pm.response.json().valor_total);"]}}]
+        },
+        {
+          "name": "21 GET Pedidos de Cocina - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/cocina/pedidos?estado=PENDIENTE"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "22 PATCH Pedido EN_PREPARACION - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"EN_PREPARACION\",\n  \"id_usuario_cambio\": {{kitchenId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "23 PATCH Pedido LISTO - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"LISTO\",\n  \"id_usuario_cambio\": {{kitchenId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "24 POST Registrar pago exacto - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_pedido\": {{salonOrderId}},\n  \"metodo\": \"EFECTIVO\",\n  \"valor\": {{orderTotal}}\n}"}, "url": "{{baseUrl}}/api/pagos"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('paymentId', pm.response.json().datos.id_pago);"]}}]
+        },
+        {
+          "name": "25 PATCH Aprobar pago - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"APROBADO\",\n  \"id_usuario_confirma\": {{userId}}\n}"}, "url": "{{baseUrl}}/api/pagos/{{paymentId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "26 PATCH Entregar pedido SALON - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"ENTREGADO\",\n  \"id_usuario_cambio\": {{userId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "27 GET Historial SALON - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/historial"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Historial completo', () => pm.expect(pm.response.json().datos.length).to.be.at.least(4));"]}}]
+        },
+        {
+          "name": "28 POST Pedido para cancelar - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"SALON\",\n  \"id_mesa\": {{mesaId}},\n  \"id_mesero\": {{userId}}\n}"}, "url": "{{baseUrl}}/api/pedidos"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('cancelOrderId', pm.response.json().datos.id_pedido);"]}}]
+        },
+        {
+          "name": "29 DELETE Cancelar pedido - 200",
+          "request": {"method": "DELETE", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_usuario_cambio\": {{userId}},\n  \"observacion\": \"Cancelación E2E\"\n}"}, "url": "{{baseUrl}}/api/pedidos/{{cancelOrderId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "2. Pedido a domicilio, asignación y entrega",
+      "item": [
+        {
+          "name": "30 POST Pedido DOMICILIO - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"DOMICILIO\",\n  \"id_cliente\": {{clientId}},\n  \"direccion_entrega\": \"Calle 10 # 20-30\",\n  \"telefono_contacto\": \"3001234567\"\n}"}, "url": "{{baseUrl}}/api/pedidos"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const p=pm.response.json().datos; pm.environment.set('deliveryOrderId', p.id_pedido); pm.environment.set('orderId', p.id_pedido); pm.environment.set('deliveryId', p.entrega.id_entrega); }"]}}]
+        },
+        {
+          "name": "31 POST Detalle domicilio - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_producto\": {{productId}},\n  \"cantidad\": 1\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/detalles"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const r=pm.response.json(); pm.environment.set('deliveryDetailId', r.datos.id_detalle); pm.environment.set('orderTotal', r.valor_total); }"]}}]
+        },
+        {
+          "name": "32 PATCH Domicilio EN_PREPARACION - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"EN_PREPARACION\",\n  \"id_usuario_cambio\": {{kitchenId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "33 PATCH Domicilio LISTO - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"LISTO\",\n  \"id_usuario_cambio\": {{kitchenId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "34 PUT Actualizar datos de entrega - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"direccion_entrega\": \"Carrera 20 # 30-40\",\n  \"telefono_contacto\": \"3111234567\",\n  \"observacion\": \"Portería E2E\"\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "35 PATCH Asignar domiciliario - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_domiciliario\": {{courierId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/domiciliario"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "36 PATCH Entrega RECOGIDA - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"RECOGIDA\"\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "37 PATCH Entrega EN_CAMINO - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"EN_CAMINO\"\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "38 PATCH Entrega ENTREGADA - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"ENTREGADA\"\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Entrega finalizada', () => pm.expect(pm.response.json().datos.estado).to.eql('ENTREGADA'));"]}}]
+        },
+        {
+          "name": "39 GET Historial domicilio - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/historial"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Incluye ENTREGADO', () => pm.expect(pm.response.json().datos.map(x => x.estado)).to.include('ENTREGADO'));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "3. Cierre administrativo",
+      "item": [
+        {
+          "name": "40 PATCH Producto no disponible - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"disponible\": false\n}"}, "url": "{{baseUrl}}/productos/{{productId}}/disponibilidad"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "41 DELETE Desactivar producto - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/productos/{{productId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "42 PATCH Mesa fuera de servicio - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"FUERA_DE_SERVICIO\"\n}"}, "url": "{{baseUrl}}/mesas/{{mesaId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "43 DELETE Desactivar categoría temporal - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/categorias/{{categoryId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "44 DELETE Desactivar mesero temporal - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/usuarios/{{userId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "45 DELETE Desactivar Cocina temporal - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/usuarios/{{kitchenId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "46 DELETE Desactivar cliente temporal - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/usuarios/{{clientId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "47 DELETE Desactivar domiciliario temporal - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/usuarios/{{courierId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        }
+      ]
+    }
+  ]
+}

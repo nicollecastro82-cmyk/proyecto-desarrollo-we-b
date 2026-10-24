@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/productos/{{productCrudId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"descripcion":"Producto CRUD actualizado","precio":"26000.50"}'
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 5000

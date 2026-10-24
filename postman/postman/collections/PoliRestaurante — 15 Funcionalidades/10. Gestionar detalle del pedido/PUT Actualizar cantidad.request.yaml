@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"cantidad":2,"comentarios":"Dos porciones"}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      if(pm.response.code===200)pm.environment.set('salonOrderTotal',pm.response.json().valor_total);
+    language: text/javascript
+order: 3000

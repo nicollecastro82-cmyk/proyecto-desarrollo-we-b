@@ -2,27 +2,73 @@ name: PoliRestaurante local
 values:
   - key: baseUrl
     value: 'http://127.0.0.1:5000'
+  - key: demoCategoryEntradasId
+    value: ''
+  - key: demoCategoryPlatosId
+    value: ''
+  - key: demoCategoryBebidasId
+    value: ''
+  - key: demoCategoryPostresId
+    value: ''
+  - key: demoProductId
+    value: ''
+  - key: demoMesaLibreId
+    value: ''
+  - key: demoMesaOcupadaId
+    value: ''
+  - key: demoAdminId
+    value: ''
+  - key: demoKitchenId
+    value: ''
+  - key: demoWaiterId
+    value: ''
+  - key: demoClientId
+    value: ''
+  - key: demoCourierId
+    value: ''
+  - key: demoSalonPendingId
+    value: ''
+  - key: demoSalonPreparingId
+    value: ''
+  - key: demoSalonDeliveredId
+    value: ''
+  - key: demoDeliveryPendingId
+    value: ''
+  - key: demoDeliveryReadyId
+    value: ''
+  - key: demoDeliveryDeliveredId
+    value: ''
+  - key: demoCancelledOrderId
+    value: ''
+  - key: demoPaymentId
+    value: ''
+  - key: demoPendingPaymentId
+    value: ''
+  - key: demoDeliveryId
+    value: ''
+  - key: demoReadyDeliveryId
+    value: ''
+  - key: demoDeliveredDeliveryId
+    value: ''
   - key: categoryId
     value: ''
-  - key: roleId
-    value: ''
-  - key: employeeRoleId
-    value: ''
-  - key: courierRoleId
-    value: ''
-  - key: userId
-    value: ''
-  - key: courierId
-    value: ''
-  - key: scheduleId
-    value: ''
-  - key: orderId
-    value: '1'
-  - key: paymentId
-    value: ''
-  - key: deliveryId
-    value: ''
   - key: categoryName
+    value: ''
+  - key: productCategoryId
+    value: ''
+  - key: productCrudId
+    value: ''
+  - key: productCrudName
+    value: ''
+  - key: productId
+    value: ''
+  - key: productName
+    value: ''
+  - key: mesaCrudId
+    value: ''
+  - key: mesaCrudNumber
+    value: ''
+  - key: mesaCrudUpdatedNumber
     value: ''
   - key: mesaId
     value: ''
@@ -30,9 +76,67 @@ values:
     value: ''
   - key: mesaUpdatedNumber
     value: ''
-  - key: productCategoryId
-    value: '2'
-  - key: productId
+  - key: roleId
     value: ''
-  - key: productName
+  - key: roleName
+    value: ''
+  - key: employeeRoleId
+    value: ''
+  - key: kitchenRoleId
+    value: ''
+  - key: clientRoleId
+    value: ''
+  - key: courierRoleId
+    value: ''
+  - key: userCrudId
+    value: ''
+  - key: userCrudLogin
+    value: ''
+  - key: userCrudEmail
+    value: ''
+  - key: userId
+    value: ''
+  - key: employeeLogin
+    value: ''
+  - key: employeeEmail
+    value: ''
+  - key: kitchenId
+    value: ''
+  - key: kitchenLogin
+    value: ''
+  - key: kitchenEmail
+    value: ''
+  - key: clientId
+    value: ''
+  - key: clientLogin
+    value: ''
+  - key: clientEmail
+    value: ''
+  - key: courierId
+    value: ''
+  - key: courierLogin
+    value: ''
+  - key: courierEmail
+    value: ''
+  - key: scheduleId
+    value: ''
+  - key: orderId
+    value: '1'
+  - key: salonOrderId
+    value: ''
+  - key: cancelOrderId
+    value: ''
+  - key: deliveryOrderId
+    value: ''
+  - key: detailId
+    value: ''
+  - key: deliveryDetailId
+    value: ''
+  - key: salonOrderTotal
+    value: ''
+  - key: deliveryOrderTotal
+    value: ''
+  - key: paymentId
+    value: ''
+  - key: deliveryId
     value: ''

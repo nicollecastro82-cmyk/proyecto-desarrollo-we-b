@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/productos?id_categoria={{productCategoryId}}"
+method: GET
+queryParams:
+  id_categoria: "{{productCategoryId}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      const demo=pm.response.json().find(p=>p.nombre==='Empanadas colombianas [DEMO]');
+      pm.test('Producto demo disponible',()=>pm.expect(demo).to.exist);
+      if(demo)pm.environment.set('demoProductId',demo.id_producto);
+    language: text/javascript
+order: 3000

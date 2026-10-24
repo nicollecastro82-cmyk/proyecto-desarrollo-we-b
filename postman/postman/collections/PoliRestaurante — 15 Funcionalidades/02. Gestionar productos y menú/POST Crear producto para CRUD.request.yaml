@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/productos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"nombre":"{{productCrudName}}","descripcion":"Producto CRUD Postman","precio":25000,"id_categoria":{{productCategoryId}}}'
+scripts:
+  - type: beforeRequest
+    code: pm.environment.set('productCrudName', 'Producto CRUD ' + Date.now());
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) pm.environment.set('productCrudId', pm.response.json().id_producto);
+    language: text/javascript
+order: 2000

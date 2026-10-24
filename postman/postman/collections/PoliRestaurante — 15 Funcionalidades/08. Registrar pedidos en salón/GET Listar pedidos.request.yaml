@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      const orders=pm.response.json().datos;
+      const demoMap={'[DEMO:PEDIDO_SALON_PENDIENTE]':'demoSalonPendingId','[DEMO:PEDIDO_SALON_EN_PREPARACION]':'demoSalonPreparingId','[DEMO:PEDIDO_SALON_ENTREGADO]':'demoSalonDeliveredId','[DEMO:PEDIDO_DOMICILIO_PENDIENTE]':'demoDeliveryPendingId','[DEMO:PEDIDO_DOMICILIO_LISTO]':'demoDeliveryReadyId','[DEMO:PEDIDO_DOMICILIO_ENTREGADO]':'demoDeliveryDeliveredId','[DEMO:PEDIDO_PARA_LLEVAR_CANCELADO]':'demoCancelledOrderId'};
+      Object.entries(demoMap).forEach(([marker,key])=>{const p=orders.find(x=>(x.observaciones||'').startsWith(marker));if(p)pm.environment.set(key,p.id_pedido);});
+      pm.test('Siete pedidos demo disponibles',()=>Object.keys(demoMap).forEach(marker=>pm.expect(orders.some(p=>(p.observaciones||'').startsWith(marker))).to.eql(true)));
+    language: text/javascript
+order: 2000

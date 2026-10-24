@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/usuarios"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      const users=pm.response.json().datos;
+      const demoMap={demo_admin:'demoAdminId',demo_cocina:'demoKitchenId',demo_mesero_1:'demoWaiterId',demo_cliente_1:'demoClientId',demo_domiciliario:'demoCourierId'};
+      Object.entries(demoMap).forEach(([login,key])=>{const u=users.find(x=>x.usuario_login===login);if(u)pm.environment.set(key,u.id_usuario);});
+      pm.test('Actores demo disponibles',()=>Object.keys(demoMap).forEach(login=>pm.expect(users.some(u=>u.usuario_login===login)).to.eql(true)));
+    language: text/javascript
+order: 3000

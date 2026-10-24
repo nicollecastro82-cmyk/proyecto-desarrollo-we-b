@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/usuarios/{{userCrudId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"id_tipo_usuario":{{employeeRoleId}},"nombre":"Usuario CRUD actualizado","usuario_login":"{{userCrudLogin}}","correo":"{{userCrudEmail}}","telefono":"3110000000","activo":true}'
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 5000

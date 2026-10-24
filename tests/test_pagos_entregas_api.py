@@ -21,17 +21,20 @@ class PagosEntregasApiTestCase(unittest.TestCase):
                 Pedido(
                     id_pedido=1,
                     tipo=TipoPedido.DOMICILIO,
-                    estado=EstadoPedido.PENDIENTE,
+                    estado=EstadoPedido.LISTO,
+                    valor_total="25000.00",
                 ),
                 Pedido(
                     id_pedido=2,
                     tipo=TipoPedido.SALON,
                     estado=EstadoPedido.PENDIENTE,
+                    valor_total="10000.00",
                 ),
                 Pedido(
                     id_pedido=3,
                     tipo=TipoPedido.DOMICILIO,
                     estado=EstadoPedido.LISTO,
+                    valor_total="10000.00",
                 ),
             ]
         )
@@ -67,8 +70,8 @@ class PagosEntregasApiTestCase(unittest.TestCase):
         self.assertEqual(created.status_code, 201)
         payment_id = created.get_json()["datos"]["id_pago"]
 
-        updated = self.client.patch(f"/api/pagos/{payment_id}", json={"valor": "26000.50"})
-        self.assertEqual(updated.get_json()["datos"]["valor"], "26000.50")
+        updated = self.client.patch(f"/api/pagos/{payment_id}", json={"valor": "25000.00"})
+        self.assertEqual(updated.get_json()["datos"]["valor"], "25000.00")
 
         approved = self.client.patch(
             f"/api/pagos/{payment_id}/estado",
@@ -152,7 +155,7 @@ class PagosEntregasApiTestCase(unittest.TestCase):
 
     def test_modelo_pedido_relaciona_pago_y_entrega(self):
         payment = self.client.post(
-            "/api/pagos", json={"id_pedido": 1, "metodo": "EFECTIVO", "valor": 10000}
+            "/api/pagos", json={"id_pedido": 1, "metodo": "EFECTIVO", "valor": 25000}
         )
         delivery = self.client.post(
             "/api/entregas",

@@ -4,6 +4,8 @@ import os
 from uuid import uuid4
 
 from app import app
+from extensions import db
+from producto import Producto
 
 
 def expect(response, expected_status, label):
@@ -18,16 +20,23 @@ def expect(response, expected_status, label):
 
 def run():
     client = app.test_client()
-    category_id = int(os.getenv("PRODUCT_CATEGORY_ID", "2"))
+    configured_category = os.getenv("PRODUCT_CATEGORY_ID")
+    category_id = int(configured_category or "2")
     suffix = uuid4().hex[:10]
 
-    category = expect(
-        client.get(f"/api/categorias/{category_id}"),
-        200,
-        "consultar categoría existente",
-    )["datos"]
+    response = client.get(f"/api/categorias/{category_id}")
+    category = expect(response, 200, "consultar categoría existente")["datos"]
     if not category["activo"]:
-        raise AssertionError(f"La categoría {category_id} está inactiva.")
+        if configured_category:
+            raise AssertionError(f"La categoría configurada {category_id} está inactiva.")
+        active = expect(
+            client.get("/api/categorias"), 200, "buscar categoría activa alternativa"
+        )["datos"]
+        if not active:
+            raise AssertionError("No existe ninguna categoría activa para la prueba.")
+        category = active[0]
+        category_id = category["id_categoria"]
+        print(f"AVISO: la categoría 2 está inactiva; se usará la {category_id}.")
 
     product = expect(
         client.post(
@@ -91,6 +100,12 @@ def run():
         "CRUD de Productos completado con categoría existente: "
         f"producto_id={product_id}, categoria={category_after['nombre']} ({category_id})."
     )
+    with app.app_context():
+        temporary = db.session.get(Producto, product_id)
+        if temporary is not None:
+            db.session.delete(temporary)
+            db.session.commit()
+    print("Limpieza OK: el producto temporal fue eliminado físicamente.")
 
 
 if __name__ == "__main__":

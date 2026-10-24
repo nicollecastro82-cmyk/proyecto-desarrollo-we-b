@@ -6,6 +6,7 @@ from unittest.mock import patch
 import consola
 from app import create_app, seed_default_roles
 from extensions import db
+from functionalities import FUNCTIONALITY_NAMES, functionality_label
 from models import Categoria
 
 
@@ -55,26 +56,18 @@ class ConsolaYinaTestCase(unittest.TestCase):
         self.assertIn("HTTP 201", salida.getvalue())
         self.assertIn("Categoría desactivada correctamente", salida.getvalue())
 
-    def test_menu_principal_abre_las_cinco_funcionalidades(self):
-        entradas = [
-            "1", "0",  # Categorías
-            "2", "1", "0", "2", "0", "0",  # Roles y Usuarios
-            "3", "0",  # Horarios
-            "4", "0",  # Pagos
-            "5", "0",  # Entregas
-            "0",
-        ]
+    def test_menu_principal_muestra_las_quince_funcionalidades(self):
         salida = io.StringIO()
-        with patch("builtins.input", side_effect=entradas), redirect_stdout(salida):
+        with patch("builtins.input", side_effect=["0"]), redirect_stdout(salida):
             consola.ejecutar_menu_orm()
 
         texto = salida.getvalue()
-        self.assertIn("CRUD DE CATEGORÍAS", texto)
-        self.assertIn("CRUD DE ROLES", texto)
-        self.assertIn("CRUD DE USUARIOS", texto)
-        self.assertIn("CRUD DE HORARIOS", texto)
-        self.assertIn("CRUD DE PAGOS", texto)
-        self.assertIn("CRUD DE ENTREGAS", texto)
+        self.assertIn("SQLALCHEMY ORM", texto)
+        opciones = consola.opciones_principales_orm()
+        for numero, _nombre in enumerate(FUNCTIONALITY_NAMES, start=1):
+            self.assertIn(functionality_label(numero), texto)
+            self.assertTrue(callable(opciones[f"{numero:02d}"]))
+        self.assertEqual(len(opciones), 15)
 
     def test_menu_inicial_separa_driver_y_orm(self):
         salida = io.StringIO()

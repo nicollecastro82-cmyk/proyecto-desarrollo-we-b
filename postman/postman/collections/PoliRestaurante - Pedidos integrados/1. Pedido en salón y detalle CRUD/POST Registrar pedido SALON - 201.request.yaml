@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "tipo": "SALON",
+      "id_mesa": {{mesaId}},
+      "id_mesero": {{userId}},
+      "observaciones": "Pedido de prueba Postman"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) { const p = pm.response.json().datos; pm.environment.set('salonOrderId', p.id_pedido); pm.environment.set('orderId', p.id_pedido); }
+    language: text/javascript
+order: 1000

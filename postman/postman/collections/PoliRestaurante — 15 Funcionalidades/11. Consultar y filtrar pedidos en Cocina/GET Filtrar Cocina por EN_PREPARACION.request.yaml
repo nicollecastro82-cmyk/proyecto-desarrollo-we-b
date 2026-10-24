@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/cocina/pedidos?estado=EN_PREPARACION"
+method: GET
+queryParams:
+  estado: EN_PREPARACION
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

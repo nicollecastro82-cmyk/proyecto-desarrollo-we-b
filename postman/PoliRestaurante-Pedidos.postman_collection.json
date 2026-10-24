@@ -1,0 +1,205 @@
+{
+  "info": {
+    "_postman_id": "6d8b321e-2f84-4e74-b7ca-7f852ce30f15",
+    "name": "PoliRestaurante - Pedidos integrados",
+    "description": "Pedidos de salón y domicilio, detalle, Cocina, cambios de estado, asignación e historial. Reutiliza mesa, producto y usuarios creados por las colecciones de sus módulos; no duplica esos CRUD.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Precondiciones compartidas",
+      "item": [
+        {
+          "name": "GET Producto activo y disponible - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/productos/{{productId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Producto utilizable', () => { const p = pm.response.json(); pm.expect(p.activo).to.eql(true); pm.expect(p.disponible).to.eql(true); });"]}}]
+        },
+        {
+          "name": "GET Mesa libre - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/mesas/{{mesaId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Mesa libre', () => pm.expect(pm.response.json().estado).to.eql('LIBRE'));"]}}]
+        },
+        {
+          "name": "GET Usuarios requeridos - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/usuarios?incluir_inactivos=true"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Variables de usuarios definidas', () => { ['userId','kitchenId','clientId','courierId'].forEach(k => pm.expect(pm.environment.get(k), k).to.not.be.empty); });"]}}]
+        }
+      ]
+    },
+    {
+      "name": "1. Pedido en salón y detalle CRUD",
+      "item": [
+        {
+          "name": "POST Registrar pedido SALON - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"SALON\",\n  \"id_mesa\": {{mesaId}},\n  \"id_mesero\": {{userId}},\n  \"observaciones\": \"Pedido de prueba Postman\"\n}"}, "url": "{{baseUrl}}/api/pedidos"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const p = pm.response.json().datos; pm.environment.set('salonOrderId', p.id_pedido); pm.environment.set('orderId', p.id_pedido); }"]}}]
+        },
+        {
+          "name": "GET Consultar pedido - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Tipo SALON', () => pm.expect(pm.response.json().datos.tipo).to.eql('SALON'));"]}}]
+        },
+        {
+          "name": "PUT Actualizar observaciones - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"observaciones\": \"Sin cebolla\"\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "POST Agregar producto - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_producto\": {{productId}},\n  \"cantidad\": 1,\n  \"comentarios\": \"Término medio\"\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const r = pm.response.json(); pm.environment.set('detailId', r.datos.id_detalle); pm.environment.set('orderTotal', r.valor_total); }"]}}]
+        },
+        {
+          "name": "GET Listar detalle - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Contiene productos', () => pm.expect(pm.response.json().datos).to.not.be.empty);"]}}]
+        },
+        {
+          "name": "PUT Reemplazar cantidad y comentario - 200",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"cantidad\": 2,\n  \"comentarios\": \"Bien cocido\"\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "if (pm.response.code === 200) pm.environment.set('orderTotal', pm.response.json().valor_total);"]}}]
+        },
+        {
+          "name": "PATCH Modificar comentario - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"comentarios\": \"Sin salsas\"\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "DELETE Quitar producto - 200",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Total vuelve a cero', () => pm.expect(pm.response.json().valor_total).to.eql('0.00'));"]}}]
+        },
+        {
+          "name": "POST Volver a agregar producto - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_producto\": {{productId}},\n  \"cantidad\": 1\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const r = pm.response.json(); pm.environment.set('detailId', r.datos.id_detalle); pm.environment.set('orderTotal', r.valor_total); }"]}}]
+        },
+        {
+          "name": "ERROR Producto duplicado - 409",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_producto\": {{productId}},\n  \"cantidad\": 1\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 409', () => pm.response.to.have.status(409));", "pm.test('Código de duplicado', () => pm.expect(pm.response.json().error.codigo).to.eql('ORDER_PRODUCT_EXISTS'));"]}}]
+        },
+        {
+          "name": "ERROR Cantidad no positiva - 400",
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"cantidad\": 0\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 400', () => pm.response.to.have.status(400));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "2. Cocina, estados e historial",
+      "item": [
+        {
+          "name": "GET Cocina por estado - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/cocina/pedidos?estado=PENDIENTE"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Respuesta ordenada es lista', () => pm.expect(pm.response.json().datos).to.be.an('array'));"]}}]
+        },
+        {
+          "name": "ERROR Cliente no prepara pedido - 403",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"EN_PREPARACION\",\n  \"id_usuario_cambio\": {{clientId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 403', () => pm.response.to.have.status(403));"]}}]
+        },
+        {
+          "name": "PATCH Pasar a EN_PREPARACION - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"EN_PREPARACION\",\n  \"id_usuario_cambio\": {{kitchenId}},\n  \"observacion\": \"Cocina inicia preparación\"\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "PATCH Pasar a LISTO - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"LISTO\",\n  \"id_usuario_cambio\": {{kitchenId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "PATCH Entregar pedido de salón - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"ENTREGADO\",\n  \"id_usuario_cambio\": {{userId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Pedido entregado', () => pm.expect(pm.response.json().datos.estado).to.eql('ENTREGADO'));"]}}]
+        },
+        {
+          "name": "GET Historial de estados - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/historial"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Registra al menos cuatro estados', () => pm.expect(pm.response.json().datos.length).to.be.at.least(4));"]}}]
+        },
+        {
+          "name": "POST Registrar pedido para cancelar - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"SALON\",\n  \"id_mesa\": {{mesaId}},\n  \"id_mesero\": {{userId}}\n}"}, "url": "{{baseUrl}}/api/pedidos"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('cancelOrderId', pm.response.json().datos.id_pedido);"]}}]
+        },
+        {
+          "name": "DELETE Cancelar pedido lógicamente - 200",
+          "request": {"method": "DELETE", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_usuario_cambio\": {{userId}},\n  \"observacion\": \"Cancelación controlada desde Postman\"\n}"}, "url": "{{baseUrl}}/api/pedidos/{{cancelOrderId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Pedido cancelado', () => pm.expect(pm.response.json().datos.estado).to.eql('CANCELADO'));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "3. Domicilio, asignación y entrega",
+      "item": [
+        {
+          "name": "POST Registrar pedido DOMICILIO - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"tipo\": \"DOMICILIO\",\n  \"id_cliente\": {{clientId}},\n  \"direccion_entrega\": \"Calle 10 # 20-30\",\n  \"telefono_contacto\": \"3001234567\"\n}"}, "url": "{{baseUrl}}/api/pedidos"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const p = pm.response.json().datos; pm.environment.set('deliveryOrderId', p.id_pedido); pm.environment.set('orderId', p.id_pedido); pm.environment.set('deliveryId', p.entrega.id_entrega); }"]}}]
+        },
+        {
+          "name": "POST Agregar producto al domicilio - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_producto\": {{productId}},\n  \"cantidad\": 1\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/detalles"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { const r = pm.response.json(); pm.environment.set('deliveryDetailId', r.datos.id_detalle); pm.environment.set('orderTotal', r.valor_total); }"]}}]
+        },
+        {
+          "name": "PATCH Domicilio EN_PREPARACION - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"EN_PREPARACION\",\n  \"id_usuario_cambio\": {{kitchenId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "PATCH Domicilio LISTO - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"LISTO\",\n  \"id_usuario_cambio\": {{kitchenId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "PATCH Asignar domiciliario - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_domiciliario\": {{courierId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/domiciliario"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Entrega asignada', () => pm.expect(pm.response.json().datos.estado).to.eql('ASIGNADA'));"]}}]
+        },
+        {
+          "name": "PATCH Entrega RECOGIDA - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"RECOGIDA\"\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "PATCH Entrega EN_CAMINO - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"EN_CAMINO\"\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"]}}]
+        },
+        {
+          "name": "PATCH Confirmar entrega - 200",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"ENTREGADA\"\n}"}, "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Entrega finalizada', () => pm.expect(pm.response.json().datos.estado).to.eql('ENTREGADA'));"]}}]
+        },
+        {
+          "name": "GET Estado final e historial - 200",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "pm.test('Pedido entregado', () => pm.expect(pm.response.json().datos.estado).to.eql('ENTREGADO'));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "4. Errores controlados",
+      "item": [
+        {
+          "name": "ERROR Pedido inexistente - 404",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/pedidos/2147483647"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 404', () => pm.response.to.have.status(404));"]}}]
+        },
+        {
+          "name": "ERROR Pedido finalizado no admite detalles - 409",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_producto\": {{productId}},\n  \"cantidad\": 0\n}"}, "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/detalles"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 409', () => pm.response.to.have.status(409));", "pm.test('Pedido no editable', () => pm.expect(pm.response.json().error.codigo).to.eql('ORDER_NOT_EDITABLE'));"]}}]
+        },
+        {
+          "name": "ERROR Asignar pedido SALON - 422",
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_domiciliario\": {{courierId}}\n}"}, "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/domiciliario"},
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Estado 422', () => pm.response.to.have.status(422));"]}}]
+        }
+      ]
+    }
+  ]
+}

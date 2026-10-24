@@ -9,6 +9,8 @@ cloudResources:
     ../postman/collections/PoliRestaurante - Funcionalidades Yina: d4d86cc1-0ab0-4311-bf36-6d76f10d31ef
     ../postman/collections/PoliRestaurante - Mesas (Nicole): 49b3395c-9667-4c79-9b4a-412f99d24c05
     ../postman/collections/PoliRestaurante - Productos: 0817dd36-a438-44ac-980f-545917d922fd
+    ../postman/collections/PoliRestaurante - Pedidos integrados: 7e7c5701-43d2-4d57-b9ce-1173737aba10
+    ../postman/collections/PoliRestaurante — 15 Funcionalidades: 29578c8d-e64d-436b-9e0b-2ac3beb632b2
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:

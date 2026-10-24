@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/cocina/pedidos?estado=PENDIENTE"
+method: GET
+queryParams:
+  estado: PENDIENTE
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Respuesta ordenada es lista', () => pm.expect(pm.response.json().datos).to.be.an('array'));
+    language: text/javascript
+order: 1000

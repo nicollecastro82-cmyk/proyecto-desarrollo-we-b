@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/mesas/{{mesaCrudId}}/estado"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"estado":"FUERA_DE_SERVICIO"}'
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 6000

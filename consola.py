@@ -1,4 +1,4 @@
-"""Consola CRUD para las cinco funcionalidades desarrolladas por Yina.
+"""Consola ORM integrada para las 15 funcionalidades de PoliRestaurante.
 
 La consola usa el cliente interno de Flask. De esta forma, cada opción ejecuta los
 mismos endpoints, validaciones y operaciones PostgreSQL que se usan desde Postman,
@@ -11,6 +11,7 @@ from getpass import getpass
 from urllib.parse import urlencode
 
 from app import app
+from functionalities import FUNCTIONALITY_NAMES, functionality_label
 
 
 OMITIDO = object()
@@ -131,7 +132,7 @@ def ejecutar_submenu(nombre, opciones):
 
 
 # ---------------------------------------------------------------------------
-# 1. Categorías
+# 01. Gestionar categorías
 # ---------------------------------------------------------------------------
 
 
@@ -191,7 +192,7 @@ def eliminar_categoria():
 
 def menu_categorias():
     ejecutar_submenu(
-        "1. CRUD DE CATEGORÍAS",
+        "01. GESTIONAR CATEGORÍAS - ORM",
         {
             "1": ("Crear categoría", crear_categoria),
             "2": ("Listar categorías activas", listar_categorias),
@@ -209,7 +210,7 @@ def menu_categorias():
 
 
 # ---------------------------------------------------------------------------
-# 2. Usuarios y roles
+# 04 y 05. Gestionar usuarios / Gestionar roles
 # ---------------------------------------------------------------------------
 
 
@@ -248,7 +249,7 @@ def eliminar_rol():
 
 def menu_roles():
     ejecutar_submenu(
-        "USUARIOS Y ROLES - CRUD DE ROLES",
+        "05. GESTIONAR ROLES - ORM",
         {
             "1": ("Crear rol", crear_rol),
             "2": ("Listar roles", listar_roles),
@@ -350,7 +351,7 @@ def probar_login():
 
 def menu_usuarios():
     ejecutar_submenu(
-        "USUARIOS Y ROLES - CRUD DE USUARIOS",
+        "04. GESTIONAR USUARIOS - ORM",
         {
             "1": ("Crear usuario", crear_usuario),
             "2": ("Listar usuarios activos", listar_usuarios),
@@ -362,23 +363,12 @@ def menu_usuarios():
             "5": ("Actualizar usuario", actualizar_usuario),
             "6": ("Activar o desactivar usuario", cambiar_estado_usuario),
             "7": ("Eliminar lógicamente (desactivar)", eliminar_usuario),
-            "8": ("Probar inicio de sesión", probar_login),
-        },
-    )
-
-
-def menu_usuarios_roles():
-    ejecutar_submenu(
-        "2. GESTIÓN DE USUARIOS Y ROLES",
-        {
-            "1": ("Administrar roles (tabla tipo_usuario)", menu_roles),
-            "2": ("Administrar usuarios (tabla usuario)", menu_usuarios),
         },
     )
 
 
 # ---------------------------------------------------------------------------
-# 3. Horarios de empleados
+# 07. Gestionar horarios
 # ---------------------------------------------------------------------------
 
 
@@ -443,7 +433,7 @@ def eliminar_horario():
 
 def menu_horarios():
     ejecutar_submenu(
-        "3. CRUD DE HORARIOS DE EMPLEADOS",
+        "07. GESTIONAR HORARIOS - ORM",
         {
             "1": ("Crear horario", crear_horario),
             "2": ("Listar y filtrar horarios", listar_horarios),
@@ -455,7 +445,7 @@ def menu_horarios():
 
 
 # ---------------------------------------------------------------------------
-# 4. Pagos
+# 13. Gestionar pagos
 # ---------------------------------------------------------------------------
 
 
@@ -528,7 +518,7 @@ def eliminar_pago():
 
 def menu_pagos():
     ejecutar_submenu(
-        "4. CRUD DE PAGOS",
+        "13. GESTIONAR PAGOS - ORM",
         {
             "1": ("Crear pago", crear_pago),
             "2": ("Listar y filtrar pagos", listar_pagos),
@@ -541,7 +531,7 @@ def menu_pagos():
 
 
 # ---------------------------------------------------------------------------
-# 5. Entregas a domicilio
+# 14. Gestionar domicilios y entregas
 # ---------------------------------------------------------------------------
 
 
@@ -634,26 +624,367 @@ def eliminar_entrega():
 
 def menu_entregas():
     ejecutar_submenu(
-        "5. CRUD DE ENTREGAS A DOMICILIO",
+        "14. GESTIONAR DOMICILIOS Y ENTREGAS - ORM",
         {
-            "1": ("Crear entrega", crear_entrega),
-            "2": ("Listar y filtrar entregas", listar_entregas),
-            "3": ("Consultar entrega por ID", consultar_entrega),
-            "4": ("Actualizar entrega", actualizar_entrega),
-            "5": ("Cambiar estado de entrega", cambiar_estado_entrega),
-            "6": ("Eliminar entrega pendiente", eliminar_entrega),
+            "1": ("Asignar pedido a domiciliario", asignar_domiciliario_pedido),
+            "2": ("Crear entrega", crear_entrega),
+            "3": ("Listar y filtrar entregas", listar_entregas),
+            "4": ("Consultar entrega por ID", consultar_entrega),
+            "5": ("Actualizar entrega", actualizar_entrega),
+            "6": ("Cambiar estado de entrega", cambiar_estado_entrega),
+            "7": ("Eliminar entrega pendiente", eliminar_entrega),
         },
     )
 
 
+# ---------------------------------------------------------------------------
+# Productos, Mesas y flujo de Pedidos (ORM mediante los servicios Flask)
+# ---------------------------------------------------------------------------
+
+
+def crear_producto():
+    datos = {
+        "nombre": leer_texto("Nombre"),
+        "precio": leer_texto("Precio"),
+        "id_categoria": leer_entero("ID de la categoría"),
+    }
+    descripcion = leer_texto("Descripción (opcional)", obligatorio=False)
+    if descripcion:
+        datos["descripcion"] = descripcion
+    solicitar_api("POST", "/productos", datos)
+
+
+def listar_productos():
+    categoria_id = leer_entero("ID de categoría (Enter = todas)", obligatorio=False)
+    buscar = leer_texto("Texto a buscar (Enter = todos)", obligatorio=False)
+    solicitar_api(
+        "GET", construir_ruta("/productos", id_categoria=categoria_id, buscar=buscar)
+    )
+
+
+def consultar_producto():
+    producto_id = leer_entero("ID del producto")
+    solicitar_api("GET", f"/productos/{producto_id}")
+
+
+def actualizar_producto():
+    producto_id = leer_entero("ID del producto")
+    datos = {}
+    agregar_si_informado(datos, "nombre", leer_texto_opcional("Nuevo nombre"))
+    agregar_si_informado(datos, "descripcion", leer_texto_opcional("Descripción", True))
+    agregar_si_informado(datos, "precio", leer_texto_opcional("Nuevo precio"))
+    agregar_si_informado(
+        datos,
+        "id_categoria",
+        leer_entero("Nuevo ID de categoría (Enter conserva)", obligatorio=False),
+    )
+    if not datos:
+        print("No se ingresaron cambios.")
+        return
+    solicitar_api("PATCH", f"/productos/{producto_id}", datos)
+
+
+def cambiar_disponibilidad_producto():
+    producto_id = leer_entero("ID del producto")
+    disponible = leer_booleano("¿Debe quedar disponible?")
+    solicitar_api(
+        "PATCH",
+        f"/productos/{producto_id}/disponibilidad",
+        {"disponible": disponible},
+    )
+
+
+def eliminar_producto():
+    producto_id = leer_entero("ID del producto")
+    if confirmar("¿Desactivar lógicamente este producto?"):
+        solicitar_api("DELETE", f"/productos/{producto_id}")
+
+
+def menu_productos():
+    ejecutar_submenu(
+        "02. GESTIONAR PRODUCTOS Y MENÚ - ORM",
+        {
+            "1": ("Crear producto", crear_producto),
+            "2": ("Listar y buscar productos disponibles", listar_productos),
+            "3": ("Consultar producto por ID", consultar_producto),
+            "4": ("Actualizar producto o precio", actualizar_producto),
+            "5": ("Cambiar disponibilidad", cambiar_disponibilidad_producto),
+            "6": ("Desactivar producto", eliminar_producto),
+        },
+    )
+
+
+def crear_mesa():
+    solicitar_api("POST", "/mesas", {"numero_mesa": leer_entero("Número de mesa")})
+
+
+def listar_mesas():
+    estado = leer_texto("Estado (Enter = todos)", obligatorio=False)
+    solicitar_api("GET", construir_ruta("/mesas", estado=estado))
+
+
+def consultar_mesa():
+    mesa_id = leer_entero("ID de la mesa")
+    solicitar_api("GET", f"/mesas/{mesa_id}")
+
+
+def actualizar_mesa():
+    mesa_id = leer_entero("ID de la mesa")
+    solicitar_api(
+        "PUT", f"/mesas/{mesa_id}", {"numero_mesa": leer_entero("Nuevo número")}
+    )
+
+
+def cambiar_estado_mesa():
+    mesa_id = leer_entero("ID de la mesa")
+    estado = leer_texto("Estado (LIBRE, OCUPADA o FUERA_DE_SERVICIO)")
+    solicitar_api("PATCH", f"/mesas/{mesa_id}/estado", {"estado": estado})
+
+
+def menu_mesas():
+    ejecutar_submenu(
+        "03. GESTIONAR MESAS - ORM",
+        {
+            "1": ("Registrar mesa", crear_mesa),
+            "2": ("Listar mesas", listar_mesas),
+            "3": ("Consultar mesa por ID", consultar_mesa),
+            "4": ("Actualizar número", actualizar_mesa),
+            "5": ("Cambiar estado", cambiar_estado_mesa),
+        },
+    )
+
+
+def registrar_pedido_salon():
+    datos = {
+        "tipo": "SALON",
+        "id_mesa": leer_entero("ID de la mesa libre"),
+        "id_mesero": leer_entero("ID del mesero"),
+    }
+    observaciones = leer_texto("Observaciones (opcional)", obligatorio=False)
+    if observaciones:
+        datos["observaciones"] = observaciones
+    solicitar_api("POST", "/api/pedidos", datos)
+
+
+def registrar_pedido_domicilio():
+    datos = {
+        "tipo": "DOMICILIO",
+        "id_cliente": leer_entero("ID del cliente"),
+        "direccion_entrega": leer_texto("Dirección de entrega"),
+        "telefono_contacto": leer_texto("Teléfono de contacto"),
+    }
+    observaciones = leer_texto("Observaciones (opcional)", obligatorio=False)
+    if observaciones:
+        datos["observaciones"] = observaciones
+    solicitar_api("POST", "/api/pedidos", datos)
+
+
+def listar_pedidos():
+    estado = leer_texto("Estado (Enter = todos)", obligatorio=False)
+    tipo = leer_texto("Tipo (Enter = todos)", obligatorio=False)
+    solicitar_api("GET", construir_ruta("/api/pedidos", estado=estado, tipo=tipo))
+
+
+def consultar_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    solicitar_api("GET", f"/api/pedidos/{pedido_id}")
+
+
+def actualizar_observaciones_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    observaciones = leer_texto("Nuevas observaciones")
+    solicitar_api(
+        "PATCH", f"/api/pedidos/{pedido_id}", {"observaciones": observaciones}
+    )
+
+
+def cancelar_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    datos = {
+        "id_usuario_cambio": leer_entero("ID del usuario responsable"),
+        "observacion": leer_texto("Motivo de cancelación"),
+    }
+    if confirmar("¿Cancelar este pedido?"):
+        solicitar_api("DELETE", f"/api/pedidos/{pedido_id}", datos)
+
+
+def menu_pedidos_salon():
+    ejecutar_submenu(
+        "08. REGISTRAR PEDIDOS EN SALÓN - ORM",
+        {
+            "1": ("Registrar pedido en salón", registrar_pedido_salon),
+            "2": ("Listar pedidos", listar_pedidos),
+            "3": ("Consultar pedido", consultar_pedido),
+            "4": ("Actualizar observaciones", actualizar_observaciones_pedido),
+            "5": ("Cancelar pedido", cancelar_pedido),
+        },
+    )
+
+
+def menu_pedidos_domicilio():
+    ejecutar_submenu(
+        "09. REGISTRAR PEDIDOS A DOMICILIO - ORM",
+        {
+            "1": ("Registrar pedido a domicilio", registrar_pedido_domicilio),
+            "2": ("Listar pedidos", listar_pedidos),
+            "3": ("Consultar pedido", consultar_pedido),
+            "4": ("Actualizar observaciones", actualizar_observaciones_pedido),
+            "5": ("Cancelar pedido", cancelar_pedido),
+        },
+    )
+
+
+def agregar_detalle_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    datos = {
+        "id_producto": leer_entero("ID del producto"),
+        "cantidad": leer_entero("Cantidad"),
+    }
+    comentarios = leer_texto("Comentarios (opcional)", obligatorio=False)
+    if comentarios:
+        datos["comentarios"] = comentarios
+    solicitar_api("POST", f"/api/pedidos/{pedido_id}/detalles", datos)
+
+
+def listar_detalles_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    solicitar_api("GET", f"/api/pedidos/{pedido_id}/detalles")
+
+
+def actualizar_detalle_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    detalle_id = leer_entero("ID del detalle")
+    datos = {}
+    agregar_si_informado(
+        datos, "cantidad", leer_entero("Nueva cantidad (Enter conserva)", False)
+    )
+    agregar_si_informado(
+        datos, "comentarios", leer_texto_opcional("Comentarios", True)
+    )
+    if not datos:
+        print("No se ingresaron cambios.")
+        return
+    solicitar_api(
+        "PATCH", f"/api/pedidos/{pedido_id}/detalles/{detalle_id}", datos
+    )
+
+
+def eliminar_detalle_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    detalle_id = leer_entero("ID del detalle")
+    if confirmar("¿Quitar este producto del pedido?"):
+        solicitar_api("DELETE", f"/api/pedidos/{pedido_id}/detalles/{detalle_id}")
+
+
+def menu_detalles_pedido():
+    ejecutar_submenu(
+        "10. GESTIONAR DETALLE DEL PEDIDO - ORM",
+        {
+            "1": ("Agregar producto", agregar_detalle_pedido),
+            "2": ("Consultar detalles", listar_detalles_pedido),
+            "3": ("Modificar cantidad o comentarios", actualizar_detalle_pedido),
+            "4": ("Quitar producto", eliminar_detalle_pedido),
+        },
+    )
+
+
+def consultar_pedidos_cocina():
+    estado = leer_texto("Estado (Enter = pendientes activos)", obligatorio=False)
+    solicitar_api("GET", construir_ruta("/api/cocina/pedidos", estado=estado))
+
+
+def actualizar_estado_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    datos = {
+        "estado": leer_texto("Nuevo estado"),
+        "id_usuario_cambio": leer_entero("ID del usuario responsable"),
+    }
+    observacion = leer_texto("Observación (opcional)", obligatorio=False)
+    if observacion:
+        datos["observacion"] = observacion
+    solicitar_api("PATCH", f"/api/pedidos/{pedido_id}/estado", datos)
+
+
+def asignar_domiciliario_pedido():
+    pedido_id = leer_entero("ID del pedido LISTO")
+    domiciliario_id = leer_entero("ID del domiciliario")
+    solicitar_api(
+        "PATCH",
+        f"/api/pedidos/{pedido_id}/domiciliario",
+        {"id_domiciliario": domiciliario_id},
+    )
+
+
+def consultar_historial_pedido():
+    pedido_id = leer_entero("ID del pedido")
+    solicitar_api("GET", f"/api/pedidos/{pedido_id}/historial")
+
+
+def menu_login():
+    ejecutar_submenu(
+        "06. INICIAR SESIÓN - ORM",
+        {"1": ("Verificar credenciales", probar_login)},
+    )
+
+
+def menu_cocina():
+    ejecutar_submenu(
+        "11. CONSULTAR Y FILTRAR PEDIDOS EN COCINA - ORM",
+        {"1": ("Consultar y filtrar pedidos", consultar_pedidos_cocina)},
+    )
+
+
+def menu_estado_preparacion():
+    ejecutar_submenu(
+        "12. ACTUALIZAR ESTADO DE PREPARACIÓN - ORM",
+        {
+            "1": ("Consultar pedido", consultar_pedido),
+            "2": ("Actualizar estado", actualizar_estado_pedido),
+        },
+    )
+
+
+def menu_historial_pedidos():
+    ejecutar_submenu(
+        "15. CONSULTAR ESTADO E HISTORIAL DE PEDIDOS - ORM",
+        {
+            "1": ("Consultar estado actual", consultar_pedido),
+            "2": ("Consultar historial", consultar_historial_pedido),
+        },
+    )
+
+
+def opciones_principales_orm():
+    operaciones = (
+        menu_categorias,
+        menu_productos,
+        menu_mesas,
+        menu_usuarios,
+        menu_roles,
+        menu_login,
+        menu_horarios,
+        menu_pedidos_salon,
+        menu_pedidos_domicilio,
+        menu_detalles_pedido,
+        menu_cocina,
+        menu_estado_preparacion,
+        menu_pagos,
+        menu_entregas,
+        menu_historial_pedidos,
+    )
+    return {
+        f"{number:02d}": operation
+        for number, operation in enumerate(operaciones, start=1)
+    }
+
+
 def mostrar_menu_principal():
-    titulo("POLIRESTAURANTE - CONSOLA CRUD DE YINA")
-    print("1. Gestionar categorías                 [tabla categoria]")
-    print("2. Gestionar usuarios y roles          [usuario / tipo_usuario]")
-    print("3. Gestionar horarios de empleados     [horario_empleado]")
-    print("4. Gestionar pagos                      [pago]")
-    print("5. Gestionar entregas a domicilio      [entrega]")
-    print("0. Salir")
+    print("\n========== POLIRESTAURANTE ==========")
+    print("          SQLALCHEMY ORM")
+    print("=====================================")
+    for number in range(1, 16):
+        print(functionality_label(number))
+    print("\n00. Salir")
 
 
 def ejecutar_menu_orm():
@@ -664,20 +995,16 @@ def ejecutar_menu_orm():
         print("No se abrirá el menú hasta corregir la conexión con PostgreSQL.")
         return
 
-    opciones = {
-        "1": menu_categorias,
-        "2": menu_usuarios_roles,
-        "3": menu_horarios,
-        "4": menu_pagos,
-        "5": menu_entregas,
-    }
+    opciones = opciones_principales_orm()
     try:
         while True:
             mostrar_menu_principal()
             opcion = input("\nSelecciona la funcionalidad: ").strip()
-            if opcion == "0":
+            if opcion in {"00", "0"}:
                 print("Consola finalizada.")
                 return
+            if opcion.isdigit():
+                opcion = f"{int(opcion):02d}"
             operacion = opciones.get(opcion)
             if operacion is None:
                 print("Opción no válida.")

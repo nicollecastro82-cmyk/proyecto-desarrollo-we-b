@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{demoDeliveryDeliveredId}}/historial"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      const states=pm.response.json().datos.map(x=>x.estado);
+      pm.test('Historial demo completo',()=>pm.expect(states).to.eql(['PENDIENTE','EN_PREPARACION','LISTO','ENTREGADO']));
+    language: text/javascript
+order: 500

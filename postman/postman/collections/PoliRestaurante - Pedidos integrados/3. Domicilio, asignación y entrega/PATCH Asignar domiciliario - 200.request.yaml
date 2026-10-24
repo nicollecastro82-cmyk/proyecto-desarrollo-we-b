@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/domiciliario"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_domiciliario": {{courierId}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Entrega asignada', () => pm.expect(pm.response.json().datos.estado).to.eql('ASIGNADA'));
+    language: text/javascript
+order: 5000

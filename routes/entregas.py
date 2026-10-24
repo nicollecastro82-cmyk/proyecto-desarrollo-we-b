@@ -5,7 +5,15 @@ from sqlalchemy.exc import IntegrityError
 
 from api_utils import ApiError, json_body, positive_int, text_value
 from extensions import db
-from models import Entrega, EstadoEntrega, Pedido, TipoPedido, Usuario
+from models import (
+    Entrega,
+    EstadoEntrega,
+    EstadoPedido,
+    HistorialEstado,
+    Pedido,
+    TipoPedido,
+    Usuario,
+)
 
 
 entregas_bp = Blueprint("entregas", __name__, url_prefix="/api/entregas")
@@ -204,6 +212,13 @@ def change_delivery_status(delivery_id):
             "INVALID_DELIVERY_TRANSITION",
         )
 
+    if new_state == EstadoEntrega.ASIGNADA and delivery.pedido.estado != EstadoPedido.LISTO:
+        raise ApiError(
+            "El pedido debe estar LISTO antes de asignar la entrega.",
+            409,
+            "ORDER_NOT_READY",
+        )
+
     if "id_domiciliario" in data:
         validate_courier(data["id_domiciliario"])
         delivery.id_domiciliario = data["id_domiciliario"]
@@ -232,6 +247,16 @@ def change_delivery_status(delivery_id):
         delivery.fecha_recogida = now
     elif new_state == EstadoEntrega.ENTREGADA:
         delivery.fecha_entrega = now
+        delivery.pedido.estado = EstadoPedido.ENTREGADO
+        delivery.pedido.fecha_ultima_actualizacion = now
+        db.session.add(
+            HistorialEstado(
+                pedido=delivery.pedido,
+                id_usuario_cambio=delivery.id_domiciliario,
+                estado=EstadoPedido.ENTREGADO,
+                observacion="Entrega finalizada por el domiciliario.",
+            )
+        )
     db.session.commit()
     return jsonify({"datos": delivery.to_dict()})
 

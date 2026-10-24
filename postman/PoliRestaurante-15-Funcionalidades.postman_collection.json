@@ -1,0 +1,2812 @@
+{
+  "info": {
+    "_postman_id": "6fbfeaec-827f-4c90-9524-15f7648d0426",
+    "name": "PoliRestaurante — 15 Funcionalidades",
+    "description": "Colección principal organizada 1 a 1 con los menús Driver y ORM. Ejecutar en el orden guardado con el ambiente PoliRestaurante local.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01. Gestionar categorías",
+      "item": [
+        {
+          "name": "Precondición - Comprobar Flask y PostgreSQL",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/salud"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Base conectada', () => pm.expect(pm.response.json().base_datos).to.eql('conectada'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear categoría",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/categorias",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"{{categoryName}}\",\"activo\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('categoryName', 'Categoria Principal ' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.environment.set('categoryId', pm.response.json().datos.id_categoria);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Listar categorías activas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/categorias"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const own = Number(pm.environment.get('categoryId'));",
+                  "const categories = pm.response.json().datos;",
+                  "const demoMap = {'Entradas [DEMO]':'demoCategoryEntradasId','Platos fuertes [DEMO]':'demoCategoryPlatosId','Bebidas [DEMO]':'demoCategoryBebidasId','Postres [DEMO]':'demoCategoryPostresId'};",
+                  "Object.entries(demoMap).forEach(([name,key]) => { const c=categories.find(x => x.nombre===name && x.activo); if(c) pm.environment.set(key,c.id_categoria); });",
+                  "const demoCategories = categories.filter(c => Object.prototype.hasOwnProperty.call(demoMap,c.nombre) && c.activo);",
+                  "pm.test('Existen las cuatro categorías demo', () => pm.expect(demoCategories.length).to.eql(4));",
+                  "const selected = categories.find(c => c.nombre === 'Entradas [DEMO]') || categories.find(c => c.activo && c.id_categoria !== own);",
+                  "pm.test('Existe categoría activa para Producto', () => pm.expect(selected).to.exist);",
+                  "if (selected) pm.environment.set('productCategoryId', selected.id_categoria);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar categoría por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/categorias/{{categoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar categoría",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/categorias/{{categoryId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"{{categoryName}} actualizada\",\"activo\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Cambiar estado de categoría",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/categorias/{{categoryId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"activo\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Nombre de categoría vacío",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/categorias",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Desactivar categoría",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/categorias/{{categoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02. Gestionar productos y menú",
+      "item": [
+        {
+          "name": "Precondición - Consultar categoría activa existente",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/categorias/{{productCategoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Categoría activa', () => pm.expect(pm.response.json().datos.activo).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear producto para CRUD",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"{{productCrudName}}\",\"descripcion\":\"Producto CRUD Postman\",\"precio\":25000,\"id_categoria\":{{productCategoryId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('productCrudName', 'Producto CRUD ' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.environment.set('productCrudId', pm.response.json().id_producto);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Listar productos del menú",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/productos?id_categoria={{productCategoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const demo=pm.response.json().find(p=>p.nombre==='Empanadas colombianas [DEMO]');",
+                  "pm.test('Producto demo disponible',()=>pm.expect(demo).to.exist);",
+                  "if(demo)pm.environment.set('demoProductId',demo.id_producto);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar producto por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/productos/{{productCrudId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar producto",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/productos/{{productCrudId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"descripcion\":\"Producto CRUD actualizado\",\"precio\":\"26000.50\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Nombre de producto duplicado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"{{productCrudName}}\",\"precio\":25000,\"id_categoria\":{{productCategoryId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Cambiar disponibilidad",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/productos/{{productCrudId}}/disponibilidad",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"disponible\":false}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Desactivar producto CRUD",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/productos/{{productCrudId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Preparar producto activo para pedidos",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/productos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"{{productName}}\",\"descripcion\":\"Producto para pedidos\",\"precio\":\"12500.00\",\"id_categoria\":{{productCategoryId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('productName', 'Producto Pedidos ' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.environment.set('productId', pm.response.json().id_producto);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03. Gestionar mesas",
+      "item": [
+        {
+          "name": "POST Registrar mesa para CRUD",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/mesas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"numero_mesa\":{{mesaCrudNumber}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const n = 100000 + Math.floor(Math.random() * 300000);",
+                  "pm.environment.set('mesaCrudNumber', n);",
+                  "pm.environment.set('mesaCrudUpdatedNumber', n + 1);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.environment.set('mesaCrudId', pm.response.json().id_mesa);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Listar mesas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/mesas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const mesas=pm.response.json();",
+                  "const libre=mesas.find(m=>m.numero_mesa===9104 && m.estado==='LIBRE');",
+                  "const ocupada=mesas.find(m=>m.numero_mesa===9101 && m.estado==='OCUPADA');",
+                  "pm.test('Mesas demo coherentes',()=>{pm.expect(libre).to.exist;pm.expect(ocupada).to.exist;});",
+                  "if(libre)pm.environment.set('demoMesaLibreId',libre.id_mesa);",
+                  "if(ocupada)pm.environment.set('demoMesaOcupadaId',ocupada.id_mesa);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar mesa por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/mesas/{{mesaCrudId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar mesa",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/mesas/{{mesaCrudId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"numero_mesa\":{{mesaCrudUpdatedNumber}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Estado de mesa inválido",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/mesas/{{mesaCrudId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"RESERVADA\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Cambiar estado de mesa CRUD",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/mesas/{{mesaCrudId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"FUERA_DE_SERVICIO\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Preparar mesa libre para pedidos",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/mesas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"numero_mesa\":{{mesaNumber}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('mesaNumber', 500000 + Math.floor(Math.random() * 300000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.environment.set('mesaId', pm.response.json().id_mesa);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04. Gestionar usuarios",
+      "item": [
+        {
+          "name": "Precondición - Obtener roles base",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tipos-usuario"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const roles = pm.response.json().datos;",
+                  "const map = {MESERO:'employeeRoleId',COCINA:'kitchenRoleId',CLIENTE:'clientRoleId',DOMICILIARIO:'courierRoleId'};",
+                  "Object.entries(map).forEach(([name,key]) => { const r=roles.find(x => x.descripcion === name); if(r) pm.environment.set(key,r.id_tipo_usuario); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Registrar usuario para CRUD",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/usuarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_tipo_usuario\":{{employeeRoleId}},\"nombre\":\"Usuario CRUD\",\"usuario_login\":\"{{userCrudLogin}}\",\"contrasena\":\"ClaveSegura123\",\"correo\":\"{{userCrudEmail}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run=Date.now();",
+                  "pm.environment.set('userCrudLogin','usuario_crud_'+run);",
+                  "pm.environment.set('userCrudEmail','usuario_crud_'+run+'@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('userCrudId',pm.response.json().datos.id_usuario);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Listar usuarios",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/usuarios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const users=pm.response.json().datos;",
+                  "const demoMap={demo_admin:'demoAdminId',demo_cocina:'demoKitchenId',demo_mesero_1:'demoWaiterId',demo_cliente_1:'demoClientId',demo_domiciliario:'demoCourierId'};",
+                  "Object.entries(demoMap).forEach(([login,key])=>{const u=users.find(x=>x.usuario_login===login);if(u)pm.environment.set(key,u.id_usuario);});",
+                  "pm.test('Actores demo disponibles',()=>Object.keys(demoMap).forEach(login=>pm.expect(users.some(u=>u.usuario_login===login)).to.eql(true)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar usuario por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/usuarios/{{userCrudId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/usuarios/{{userCrudId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_tipo_usuario\":{{employeeRoleId}},\"nombre\":\"Usuario CRUD actualizado\",\"usuario_login\":\"{{userCrudLogin}}\",\"correo\":\"{{userCrudEmail}}\",\"telefono\":\"3110000000\",\"activo\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Cambiar estado de usuario",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/usuarios/{{userCrudId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"activo\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Usuario duplicado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/usuarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_tipo_usuario\":{{employeeRoleId}},\"nombre\":\"Duplicado\",\"usuario_login\":\"{{userCrudLogin}}\",\"contrasena\":\"ClaveSegura123\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Desactivar usuario CRUD",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/usuarios/{{userCrudId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparar usuario Mesero para el flujo integrado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/usuarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_tipo_usuario\":{{employeeRoleId}},\"nombre\":\"Mesero Postman\",\"usuario_login\":\"{{employeeLogin}}\",\"contrasena\":\"ClaveSegura123\",\"correo\":\"{{employeeEmail}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run=Date.now();",
+                  "pm.environment.set('employeeLogin','employee_postman_'+run);",
+                  "pm.environment.set('employeeEmail','employee_postman_'+run+'@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('userId',pm.response.json().datos.id_usuario);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparar usuario Cocina para el flujo integrado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/usuarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_tipo_usuario\":{{kitchenRoleId}},\"nombre\":\"Cocina Postman\",\"usuario_login\":\"{{kitchenLogin}}\",\"contrasena\":\"ClaveSegura123\",\"correo\":\"{{kitchenEmail}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run=Date.now();",
+                  "pm.environment.set('kitchenLogin','kitchen_postman_'+run);",
+                  "pm.environment.set('kitchenEmail','kitchen_postman_'+run+'@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('kitchenId',pm.response.json().datos.id_usuario);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparar usuario Cliente para el flujo integrado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/usuarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_tipo_usuario\":{{clientRoleId}},\"nombre\":\"Cliente Postman\",\"usuario_login\":\"{{clientLogin}}\",\"contrasena\":\"ClaveSegura123\",\"correo\":\"{{clientEmail}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run=Date.now();",
+                  "pm.environment.set('clientLogin','client_postman_'+run);",
+                  "pm.environment.set('clientEmail','client_postman_'+run+'@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('clientId',pm.response.json().datos.id_usuario);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparar usuario Domiciliario para el flujo integrado",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/usuarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_tipo_usuario\":{{courierRoleId}},\"nombre\":\"Domiciliario Postman\",\"usuario_login\":\"{{courierLogin}}\",\"contrasena\":\"ClaveSegura123\",\"correo\":\"{{courierEmail}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run=Date.now();",
+                  "pm.environment.set('courierLogin','courier_postman_'+run);",
+                  "pm.environment.set('courierEmail','courier_postman_'+run+'@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('courierId',pm.response.json().datos.id_usuario);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05. Gestionar roles",
+      "item": [
+        {
+          "name": "GET Listar roles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tipos-usuario"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear rol",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tipos-usuario",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"descripcion\":\"{{roleName}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('roleName','ROL_POSTMAN_'+Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('roleId',pm.response.json().datos.id_tipo_usuario);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar rol por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tipos-usuario/{{roleId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar rol",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/tipos-usuario/{{roleId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"descripcion\":\"{{roleName}}_ACTUALIZADO\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR No eliminar rol base",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/tipos-usuario/{{employeeRoleId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Eliminar rol sin usuarios",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/tipos-usuario/{{roleId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06. Iniciar sesión",
+      "item": [
+        {
+          "name": "POST Iniciar sesión con credenciales correctas",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"usuario_login\":\"{{employeeLogin}}\",\"contrasena\":\"ClaveSegura123\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Credenciales incorrectas",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"usuario_login\":\"{{employeeLogin}}\",\"contrasena\":\"Incorrecta\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Precondición - Desactivar temporalmente usuario",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/usuarios/{{userId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"activo\":false}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Usuario inactivo",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"usuario_login\":\"{{employeeLogin}}\",\"contrasena\":\"ClaveSegura123\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restaurar usuario activo para pedidos",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/usuarios/{{userId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"activo\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07. Gestionar horarios",
+      "item": [
+        {
+          "name": "POST Crear horario",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/horarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_usuario\":{{userId}},\"fecha\":\"2099-10-24\",\"hora_inicio\":\"08:00\",\"hora_fin\":\"16:00\",\"observacion\":\"Horario Postman\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('scheduleId',pm.response.json().datos.id_horario);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Listar horarios",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/horarios?id_usuario={{userId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar horario por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/horarios/{{scheduleId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar horario",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/horarios/{{scheduleId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_usuario\":{{userId}},\"fecha\":\"2099-10-24\",\"hora_inicio\":\"08:00\",\"hora_fin\":\"17:00\",\"observacion\":\"Actualizado\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Rango de horas inválido",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/horarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_usuario\":{{userId}},\"fecha\":\"2099-10-25\",\"hora_inicio\":\"18:00\",\"hora_fin\":\"08:00\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Eliminar horario",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/horarios/{{scheduleId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08. Registrar pedidos en salón",
+      "item": [
+        {
+          "name": "POST Registrar pedido en salón",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tipo\":\"SALON\",\"id_mesa\":{{mesaId}},\"id_mesero\":{{userId}},\"observaciones\":\"Pedido Postman\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('salonOrderId',pm.response.json().datos.id_pedido);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Listar pedidos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const orders=pm.response.json().datos;",
+                  "const demoMap={'[DEMO:PEDIDO_SALON_PENDIENTE]':'demoSalonPendingId','[DEMO:PEDIDO_SALON_EN_PREPARACION]':'demoSalonPreparingId','[DEMO:PEDIDO_SALON_ENTREGADO]':'demoSalonDeliveredId','[DEMO:PEDIDO_DOMICILIO_PENDIENTE]':'demoDeliveryPendingId','[DEMO:PEDIDO_DOMICILIO_LISTO]':'demoDeliveryReadyId','[DEMO:PEDIDO_DOMICILIO_ENTREGADO]':'demoDeliveryDeliveredId','[DEMO:PEDIDO_PARA_LLEVAR_CANCELADO]':'demoCancelledOrderId'};",
+                  "Object.entries(demoMap).forEach(([marker,key])=>{const p=orders.find(x=>(x.observaciones||'').startsWith(marker));if(p)pm.environment.set(key,p.id_pedido);});",
+                  "pm.test('Siete pedidos demo disponibles',()=>Object.keys(demoMap).forEach(marker=>pm.expect(orders.some(p=>(p.observaciones||'').startsWith(marker))).to.eql(true)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar pedido",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar observaciones",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"observaciones\":\"Pedido actualizado desde Postman\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Mesa ocupada",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tipo\":\"SALON\",\"id_mesa\":{{mesaId}},\"id_mesero\":{{userId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Preparar pedido para cancelación",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tipo\":\"PARA_LLEVAR\",\"id_mesero\":{{userId}},\"observaciones\":\"Cancelar\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('cancelOrderId',pm.response.json().datos.id_pedido);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Cancelar pedido lógicamente",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/pedidos/{{cancelOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_usuario_cambio\":{{userId}},\"observacion\":\"Cancelación controlada\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09. Registrar pedidos a domicilio",
+      "item": [
+        {
+          "name": "POST Registrar pedido a domicilio",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tipo\":\"DOMICILIO\",\"id_cliente\":{{clientId}},\"direccion_entrega\":\"Calle 10 # 20-30\",\"telefono_contacto\":\"3001234567\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201){const p=pm.response.json().datos;pm.environment.set('deliveryOrderId',p.id_pedido);pm.environment.set('deliveryId',p.entrega.id_entrega);}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar pedido a domicilio",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar observaciones de domicilio",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"observaciones\":\"Domicilio actualizado\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Domicilio sin cliente ni dirección",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tipo\":\"DOMICILIO\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Gestionar detalle del pedido",
+      "item": [
+        {
+          "name": "POST Agregar producto al pedido de salón",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_producto\":{{productId}},\"cantidad\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201){const r=pm.response.json();pm.environment.set('detailId',r.datos.id_detalle);pm.environment.set('salonOrderTotal',r.valor_total);}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar detalle",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar cantidad",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"cantidad\":2,\"comentarios\":\"Dos porciones\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "if(pm.response.code===200)pm.environment.set('salonOrderTotal',pm.response.json().valor_total);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Actualizar comentarios",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"comentarios\":\"Sin salsas\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Cantidad no positiva",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"cantidad\":0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Quitar producto",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles/{{detailId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Volver a agregar producto al salón",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_producto\":{{productId}},\"cantidad\":2}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201){const r=pm.response.json();pm.environment.set('detailId',r.datos.id_detalle);pm.environment.set('salonOrderTotal',r.valor_total);}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Producto duplicado en el pedido",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/detalles",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_producto\":{{productId}},\"cantidad\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Agregar producto al domicilio",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/detalles",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_producto\":{{productId}},\"cantidad\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201){const r=pm.response.json();pm.environment.set('deliveryDetailId',r.datos.id_detalle);pm.environment.set('deliveryOrderTotal',r.valor_total);}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11. Consultar y filtrar pedidos en Cocina",
+      "item": [
+        {
+          "name": "GET Pedidos activos de Cocina",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cocina/pedidos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Filtrar Cocina por PENDIENTE",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cocina/pedidos?estado=PENDIENTE"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Filtrar Cocina por EN_PREPARACION",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cocina/pedidos?estado=EN_PREPARACION"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Estado de Cocina inválido",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cocina/pedidos?estado=DESCONOCIDO"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12. Actualizar estado de preparación",
+      "item": [
+        {
+          "name": "ERROR Cliente no puede preparar",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"EN_PREPARACION\",\"id_usuario_cambio\":{{clientId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Salón EN_PREPARACION",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"EN_PREPARACION\",\"id_usuario_cambio\":{{kitchenId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Salón LISTO",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"LISTO\",\"id_usuario_cambio\":{{kitchenId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Salón ENTREGADO",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"ENTREGADO\",\"id_usuario_cambio\":{{userId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Domicilio EN_PREPARACION",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"EN_PREPARACION\",\"id_usuario_cambio\":{{kitchenId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Domicilio LISTO",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"LISTO\",\"id_usuario_cambio\":{{kitchenId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Transición inválida",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"EN_PREPARACION\",\"id_usuario_cambio\":{{kitchenId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "13. Gestionar pagos",
+      "item": [
+        {
+          "name": "GET Listar pagos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pagos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const payments=pm.response.json().datos;",
+                  "const approved=payments.find(p=>p.id_pedido===Number(pm.environment.get('demoSalonDeliveredId')));",
+                  "const pending=payments.find(p=>p.id_pedido===Number(pm.environment.get('demoDeliveryReadyId')));",
+                  "pm.test('Pagos demo disponibles',()=>{pm.expect(approved).to.exist;pm.expect(pending).to.exist;});",
+                  "if(approved)pm.environment.set('demoPaymentId',approved.id_pago);",
+                  "if(pending)pm.environment.set('demoPendingPaymentId',pending.id_pago);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Valor diferente al total",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pagos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_pedido\":{{salonOrderId}},\"metodo\":\"EFECTIVO\",\"valor\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Registrar pago",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/pagos",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_pedido\":{{salonOrderId}},\"metodo\":\"EFECTIVO\",\"valor\":{{salonOrderTotal}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+                  "if(pm.response.code===201)pm.environment.set('paymentId',pm.response.json().datos.id_pago);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar pago",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pagos/{{paymentId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar pago pendiente",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/pagos/{{paymentId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"metodo\":\"EFECTIVO\",\"valor\":{{salonOrderTotal}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Aprobar pago",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pagos/{{paymentId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"APROBADO\",\"id_usuario_confirma\":{{userId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR No eliminar pago finalizado",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/pagos/{{paymentId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "14. Gestionar domicilios y entregas",
+      "item": [
+        {
+          "name": "GET Listar entregas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/entregas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const deliveries=pm.response.json().datos;",
+                  "const pending=deliveries.find(e=>e.id_pedido===Number(pm.environment.get('demoDeliveryPendingId')));",
+                  "const ready=deliveries.find(e=>e.id_pedido===Number(pm.environment.get('demoDeliveryReadyId')));",
+                  "const delivered=deliveries.find(e=>e.id_pedido===Number(pm.environment.get('demoDeliveryDeliveredId')));",
+                  "pm.test('Entregas demo disponibles',()=>{pm.expect(pending).to.exist;pm.expect(ready).to.exist;pm.expect(delivered).to.exist;});",
+                  "if(pending)pm.environment.set('demoDeliveryId',pending.id_entrega);",
+                  "if(ready)pm.environment.set('demoReadyDeliveryId',ready.id_entrega);",
+                  "if(delivered)pm.environment.set('demoDeliveredDeliveryId',delivered.id_entrega);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Consultar entrega",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/entregas/{{deliveryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR No asignar un pedido de salón",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/domiciliario",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_domiciliario\":{{courierId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Actualizar datos de entrega",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/entregas/{{deliveryId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"direccion_entrega\":\"Carrera 20 # 30-40\",\"telefono_contacto\":\"3111234567\",\"observacion\":\"Portería\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Asignar domiciliario",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/domiciliario",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id_domiciliario\":{{courierId}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Marcar entrega RECOGIDA",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"RECOGIDA\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Marcar entrega EN_CAMINO",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"EN_CAMINO\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Confirmar entrega ENTREGADA",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/entregas/{{deliveryId}}/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"ENTREGADA\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR No eliminar entrega finalizada",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/entregas/{{deliveryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "15. Consultar estado e historial de pedidos",
+      "item": [
+        {
+          "name": "GET Historial completo de pedido demo",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/{{demoDeliveryDeliveredId}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "const states=pm.response.json().datos.map(x=>x.estado);",
+                  "pm.test('Historial demo completo',()=>pm.expect(states).to.eql(['PENDIENTE','EN_PREPARACION','LISTO','ENTREGADO']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Estado actual del pedido de salón",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Historial del pedido de salón",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/{{salonOrderId}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Estado actual del domicilio",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Historial del domicilio",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye estado ENTREGADO',()=>pm.expect(pm.response.json().datos.map(x=>x.estado)).to.include('ENTREGADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ERROR Pedido inexistente",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pedidos/2147483647"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

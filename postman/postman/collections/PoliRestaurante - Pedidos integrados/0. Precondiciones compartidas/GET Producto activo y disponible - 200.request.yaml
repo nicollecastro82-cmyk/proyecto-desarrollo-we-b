@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/productos/{{productId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Producto utilizable', () => { const p = pm.response.json(); pm.expect(p.activo).to.eql(true); pm.expect(p.disponible).to.eql(true); });
+    language: text/javascript
+order: 1000

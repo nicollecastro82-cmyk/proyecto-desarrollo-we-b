@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{salonOrderId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Tipo SALON', () => pm.expect(pm.response.json().datos.tipo).to.eql('SALON'));
+    language: text/javascript
+order: 2000

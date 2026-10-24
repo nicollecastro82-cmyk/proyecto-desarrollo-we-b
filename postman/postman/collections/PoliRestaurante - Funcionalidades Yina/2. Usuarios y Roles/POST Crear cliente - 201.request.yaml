@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/api/usuarios"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_tipo_usuario": {{clientRoleId}},
+      "nombre": "Cliente Postman",
+      "usuario_login": "{{clientLogin}}",
+      "contrasena": "ClaveSegura123",
+      "correo": "{{clientEmail}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const run = Date.now();
+      pm.environment.set('clientLogin', 'cliente_' + run);
+      pm.environment.set('clientEmail', 'cliente_' + run + '@example.com');
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) pm.environment.set('clientId', pm.response.json().datos.id_usuario);
+    language: text/javascript
+order: 6600

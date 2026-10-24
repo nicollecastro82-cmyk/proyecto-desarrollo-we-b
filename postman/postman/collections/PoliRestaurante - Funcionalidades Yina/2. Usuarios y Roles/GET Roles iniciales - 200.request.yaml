@@ -8,7 +8,11 @@ scripts:
       const roles = pm.response.json().datos;
       const empleado = roles.find(r => r.descripcion === 'MESERO');
       const domiciliario = roles.find(r => r.descripcion === 'DOMICILIARIO');
+      const cocina = roles.find(r => r.descripcion === 'COCINA');
+      const cliente = roles.find(r => r.descripcion === 'CLIENTE');
       if (empleado) pm.environment.set('employeeRoleId', empleado.id_tipo_usuario);
       if (domiciliario) pm.environment.set('courierRoleId', domiciliario.id_tipo_usuario);
+      if (cocina) pm.environment.set('kitchenRoleId', cocina.id_tipo_usuario);
+      if (cliente) pm.environment.set('clientRoleId', cliente.id_tipo_usuario);
     language: text/javascript
 order: 1000

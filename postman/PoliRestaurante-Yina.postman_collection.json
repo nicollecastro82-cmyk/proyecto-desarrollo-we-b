@@ -82,7 +82,7 @@
         {
           "name": "GET Roles iniciales - 200",
           "request": {"method": "GET", "url": "{{baseUrl}}/api/tipos-usuario"},
-          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "const roles = pm.response.json().datos;", "const empleado = roles.find(r => r.descripcion === 'MESERO');", "const domiciliario = roles.find(r => r.descripcion === 'DOMICILIARIO');", "if (empleado) pm.environment.set('employeeRoleId', empleado.id_tipo_usuario);", "if (domiciliario) pm.environment.set('courierRoleId', domiciliario.id_tipo_usuario);"], "type": "text/javascript"}}]
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));", "const roles = pm.response.json().datos;", "const empleado = roles.find(r => r.descripcion === 'MESERO');", "const domiciliario = roles.find(r => r.descripcion === 'DOMICILIARIO');", "const cocina = roles.find(r => r.descripcion === 'COCINA');", "const cliente = roles.find(r => r.descripcion === 'CLIENTE');", "if (empleado) pm.environment.set('employeeRoleId', empleado.id_tipo_usuario);", "if (domiciliario) pm.environment.set('courierRoleId', domiciliario.id_tipo_usuario);", "if (cocina) pm.environment.set('kitchenRoleId', cocina.id_tipo_usuario);", "if (cliente) pm.environment.set('clientRoleId', cliente.id_tipo_usuario);"], "type": "text/javascript"}}]
         },
         {
           "name": "POST Crear rol temporal - 201",
@@ -110,6 +110,16 @@
           "event": [{"listen": "prerequest", "script": {"exec": ["const run = Date.now();", "pm.environment.set('courierLogin', 'domiciliario_' + run);", "pm.environment.set('courierEmail', 'domiciliario_' + run + '@example.com');"], "type": "text/javascript"}}, {"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('courierId', pm.response.json().datos.id_usuario);"], "type": "text/javascript"}}]
         },
         {
+          "name": "POST Crear usuario Cocina - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{kitchenRoleId}},\n  \"nombre\": \"Cocina Postman\",\n  \"usuario_login\": \"{{kitchenLogin}}\",\n  \"contrasena\": \"ClaveSegura123\",\n  \"correo\": \"{{kitchenEmail}}\"\n}"}, "url": "{{baseUrl}}/api/usuarios"},
+          "event": [{"listen": "prerequest", "script": {"exec": ["const run = Date.now();", "pm.environment.set('kitchenLogin', 'cocina_' + run);", "pm.environment.set('kitchenEmail', 'cocina_' + run + '@example.com');"], "type": "text/javascript"}}, {"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('kitchenId', pm.response.json().datos.id_usuario);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "POST Crear cliente - 201",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_tipo_usuario\": {{clientRoleId}},\n  \"nombre\": \"Cliente Postman\",\n  \"usuario_login\": \"{{clientLogin}}\",\n  \"contrasena\": \"ClaveSegura123\",\n  \"correo\": \"{{clientEmail}}\"\n}"}, "url": "{{baseUrl}}/api/usuarios"},
+          "event": [{"listen": "prerequest", "script": {"exec": ["const run = Date.now();", "pm.environment.set('clientLogin', 'cliente_' + run);", "pm.environment.set('clientEmail', 'cliente_' + run + '@example.com');"], "type": "text/javascript"}}, {"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('clientId', pm.response.json().datos.id_usuario);"], "type": "text/javascript"}}]
+        },
+        {
           "name": "GET Usuario por ID - 200",
           "request": {"method": "GET", "url": "{{baseUrl}}/api/usuarios/{{userId}}"},
           "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
@@ -125,9 +135,19 @@
           "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
         },
         {
+          "name": "ERROR Credenciales incorrectas - 401",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"usuario_login\": \"{{employeeLogin}}\",\n  \"contrasena\": \"Incorrecta\"\n}"}, "url": "{{baseUrl}}/api/auth/login"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 401', () => pm.response.to.have.status(401));"], "type": "text/javascript"}}]
+        },
+        {
           "name": "DELETE Desactivar usuario - 200",
           "request": {"method": "DELETE", "url": "{{baseUrl}}/api/usuarios/{{userId}}"},
           "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "ERROR Usuario inactivo no inicia sesión - 403",
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"usuario_login\": \"{{employeeLogin}}\",\n  \"contrasena\": \"ClaveSegura123\"\n}"}, "url": "{{baseUrl}}/api/auth/login"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 403', () => pm.response.to.have.status(403));"], "type": "text/javascript"}}]
         }
       ]
     },
@@ -168,7 +188,7 @@
     },
     {
       "name": "4. Pagos",
-      "description": "La tabla pedido ya está integrada. Configura orderId con el ID de un pedido existente antes de ejecutar esta carpeta.",
+      "description": "Pedido ya está integrado. La colección de Pedidos guarda orderId y orderTotal con valores reales antes de ejecutar esta carpeta.",
       "item": [
         {
           "name": "GET Listar pagos - 200",
@@ -177,17 +197,17 @@
         },
         {
           "name": "POST Crear pago - 201",
-          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_pedido\": {{orderId}},\n  \"metodo\": \"PSE\",\n  \"valor\": 25000\n}"}, "url": "{{baseUrl}}/api/pagos"},
+          "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"id_pedido\": {{orderId}},\n  \"metodo\": \"PSE\",\n  \"valor\": {{orderTotal}}\n}"}, "url": "{{baseUrl}}/api/pagos"},
           "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 201', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) pm.environment.set('paymentId', pm.response.json().datos.id_pago);"], "type": "text/javascript"}}]
         },
         {
           "name": "PUT Actualizar pago pendiente - 200",
-          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"metodo\": \"PSE\",\n  \"valor\": 26000,\n  \"referencia_transaccion\": \"PSE-POSTMAN-001\"\n}"}, "url": "{{baseUrl}}/api/pagos/{{paymentId}}"},
+          "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"metodo\": \"PSE\",\n  \"valor\": {{orderTotal}},\n  \"referencia_transaccion\": \"PSE-POSTMAN-{{$timestamp}}\"\n}"}, "url": "{{baseUrl}}/api/pagos/{{paymentId}}"},
           "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
         },
         {
           "name": "PATCH Aprobar pago - 200",
-          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"APROBADO\",\n  \"id_usuario_confirma\": {{userId}},\n  \"referencia_transaccion\": \"PSE-POSTMAN-001\"\n}"}, "url": "{{baseUrl}}/api/pagos/{{paymentId}}/estado"},
+          "request": {"method": "PATCH", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"estado\": \"APROBADO\",\n  \"id_usuario_confirma\": {{userId}}\n}"}, "url": "{{baseUrl}}/api/pagos/{{paymentId}}/estado"},
           "event": [{"listen": "test", "script": {"exec": ["pm.test('Estado 200', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
         },
         {

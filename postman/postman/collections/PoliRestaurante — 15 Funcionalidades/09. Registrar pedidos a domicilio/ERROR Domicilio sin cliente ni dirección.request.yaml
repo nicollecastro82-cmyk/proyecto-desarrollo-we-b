@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"tipo":"DOMICILIO"}'
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 400', () => pm.response.to.have.status(400));
+    language: text/javascript
+order: 4000

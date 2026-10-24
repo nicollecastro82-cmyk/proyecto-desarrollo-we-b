@@ -106,9 +106,22 @@ def create_payment():
         {"id_pedido", "metodo", "valor"},
     )
     order_id = positive_int(data["id_pedido"], "id_pedido")
-    find_order_or_404(order_id)
+    order = find_order_or_404(order_id)
     method = parse_enum(data["metodo"], MetodoPago, "metodo")
     amount = parse_amount(data["valor"])
+    if order.valor_total <= 0:
+        raise ApiError(
+            "El pedido no tiene un valor total por pagar.",
+            409,
+            "ORDER_HAS_NO_TOTAL",
+        )
+    if amount != order.valor_total:
+        raise ApiError(
+            "El valor del pago debe coincidir con el total del pedido.",
+            409,
+            "PAYMENT_AMOUNT_MISMATCH",
+            {"valor_total_pedido": str(order.valor_total)},
+        )
     reference = text_value(
         data.get("referencia_transaccion"),
         "referencia_transaccion",
@@ -155,7 +168,15 @@ def update_payment(payment_id, partial):
     if "metodo" in data:
         payment.metodo = parse_enum(data["metodo"], MetodoPago, "metodo")
     if "valor" in data:
-        payment.valor = parse_amount(data["valor"])
+        amount = parse_amount(data["valor"])
+        if amount != payment.pedido.valor_total:
+            raise ApiError(
+                "El valor del pago debe coincidir con el total del pedido.",
+                409,
+                "PAYMENT_AMOUNT_MISMATCH",
+                {"valor_total_pedido": str(payment.pedido.valor_total)},
+            )
+        payment.valor = amount
     if "referencia_transaccion" in data:
         payment.referencia_transaccion = text_value(
             data["referencia_transaccion"],

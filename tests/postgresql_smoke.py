@@ -10,7 +10,9 @@ from uuid import uuid4
 
 from app import app
 from extensions import db
-from models import EstadoPedido, Pedido, TipoPedido
+from mesas import Mesa
+from models import EstadoPedido, Pedido, TipoPedido, Usuario
+from producto import Producto
 
 
 def expect(response, expected_status, label):
@@ -29,16 +31,24 @@ def run():
 
     expect(client.get("/api/salud"), 200, "salud y conexión PostgreSQL")
 
-    category_id = int(os.getenv("PRODUCT_CATEGORY_ID", "2"))
+    configured_category = os.getenv("PRODUCT_CATEGORY_ID")
+    category_id = int(configured_category or "2")
     category = expect(
-        client.get(f"/api/categorias/{category_id}"),
-        200,
-        "consultar categoría existente",
+        client.get(f"/api/categorias/{category_id}"), 200, "consultar categoría existente"
     )["datos"]
     if not category["activo"]:
-        raise AssertionError(
-            f"La categoría existente {category_id} está inactiva y no puede usarse."
-        )
+        if configured_category:
+            raise AssertionError(
+                f"La categoría configurada {category_id} está inactiva."
+            )
+        active = expect(
+            client.get("/api/categorias"), 200, "buscar categoría activa alternativa"
+        )["datos"]
+        if not active:
+            raise AssertionError("No existe ninguna categoría activa para la prueba.")
+        category = active[0]
+        category_id = category["id_categoria"]
+        print(f"AVISO: la categoría 2 está inactiva; se usará la {category_id}.")
 
     product = expect(
         client.post(
@@ -201,7 +211,7 @@ def run():
     )["datos"]
     expect(client.get(f"/api/pagos/{payment['id_pago']}"), 200, "consultar pago")
     expect(
-        client.patch(f"/api/pagos/{payment['id_pago']}", json={"valor": 11000}),
+        client.patch(f"/api/pagos/{payment['id_pago']}", json={"valor": 10000}),
         200,
         "actualizar pago pendiente",
     )
@@ -246,12 +256,18 @@ def run():
     with app.app_context():
         order = db.session.get(Pedido, order_id)
         db.session.delete(order)
+        product = db.session.get(Producto, product_id)
+        table = db.session.get(Mesa, table_id)
+        user = db.session.get(Usuario, user_id)
+        db.session.delete(product)
+        db.session.delete(table)
+        db.session.delete(user)
         db.session.commit()
 
     print("Prueba PostgreSQL completada correctamente.")
     print(
-        f"Datos trazables: sufijo={suffix}, mesa_id={table_id}, "
-        f"usuario_id={user_id}, pedido_temporal_eliminado={order_id}"
+        f"Limpieza completada: sufijo={suffix}; producto, mesa, usuario y "
+        f"pedido temporal {order_id} eliminados."
     )
 
 

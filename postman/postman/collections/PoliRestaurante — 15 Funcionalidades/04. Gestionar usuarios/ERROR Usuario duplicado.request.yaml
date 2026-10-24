@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/usuarios"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"id_tipo_usuario":{{employeeRoleId}},"nombre":"Duplicado","usuario_login":"{{userCrudLogin}}","contrasena":"ClaveSegura123"}'
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 409', () => pm.response.to.have.status(409));
+    language: text/javascript
+order: 7000

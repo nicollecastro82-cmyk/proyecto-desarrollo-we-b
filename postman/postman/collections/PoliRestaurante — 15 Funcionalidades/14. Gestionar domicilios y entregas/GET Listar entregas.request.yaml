@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/entregas"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      const deliveries=pm.response.json().datos;
+      const pending=deliveries.find(e=>e.id_pedido===Number(pm.environment.get('demoDeliveryPendingId')));
+      const ready=deliveries.find(e=>e.id_pedido===Number(pm.environment.get('demoDeliveryReadyId')));
+      const delivered=deliveries.find(e=>e.id_pedido===Number(pm.environment.get('demoDeliveryDeliveredId')));
+      pm.test('Entregas demo disponibles',()=>{pm.expect(pending).to.exist;pm.expect(ready).to.exist;pm.expect(delivered).to.exist;});
+      if(pending)pm.environment.set('demoDeliveryId',pending.id_entrega);
+      if(ready)pm.environment.set('demoReadyDeliveryId',ready.id_entrega);
+      if(delivered)pm.environment.set('demoDeliveredDeliveryId',delivered.id_entrega);
+    language: text/javascript
+order: 1000

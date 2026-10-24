@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{deliveryOrderId}}/estado"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"estado":"LISTO","id_usuario_cambio":{{kitchenId}}}'
+scripts:
+  - type: afterResponse
+    code: pm.test('Estado 200', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 6000

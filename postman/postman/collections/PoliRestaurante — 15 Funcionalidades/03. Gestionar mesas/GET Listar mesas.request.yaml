@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/mesas"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      const mesas=pm.response.json();
+      const libre=mesas.find(m=>m.numero_mesa===9104 && m.estado==='LIBRE');
+      const ocupada=mesas.find(m=>m.numero_mesa===9101 && m.estado==='OCUPADA');
+      pm.test('Mesas demo coherentes',()=>{pm.expect(libre).to.exist;pm.expect(ocupada).to.exist;});
+      if(libre)pm.environment.set('demoMesaLibreId',libre.id_mesa);
+      if(ocupada)pm.environment.set('demoMesaOcupadaId',ocupada.id_mesa);
+    language: text/javascript
+order: 2000

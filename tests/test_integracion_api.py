@@ -39,6 +39,9 @@ class IntegracionApiTestCase(unittest.TestCase):
         self.assertIn(("/api/categorias", "GET"), registrations)
         self.assertIn(("/mesas", "POST"), registrations)
         self.assertIn(("/productos", "POST"), registrations)
+        self.assertIn(("/api/pedidos", "POST"), registrations)
+        self.assertIn(("/api/pedidos/<int:order_id>/detalles", "POST"), registrations)
+        self.assertIn(("/api/cocina/pedidos", "GET"), registrations)
 
     def test_crud_funcional_de_mesas(self):
         created = self.client.post("/mesas", json={"numero_mesa": 10})

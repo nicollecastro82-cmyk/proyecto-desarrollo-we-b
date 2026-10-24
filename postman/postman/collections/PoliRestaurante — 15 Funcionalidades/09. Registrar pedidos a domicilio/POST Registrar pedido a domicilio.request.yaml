@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"tipo":"DOMICILIO","id_cliente":{{clientId}},"direccion_entrega":"Calle 10 # 20-30","telefono_contacto":"3001234567"}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 201', () => pm.response.to.have.status(201));
+      if(pm.response.code===201){const p=pm.response.json().datos;pm.environment.set('deliveryOrderId',p.id_pedido);pm.environment.set('deliveryId',p.entrega.id_entrega);}
+    language: text/javascript
+order: 1000

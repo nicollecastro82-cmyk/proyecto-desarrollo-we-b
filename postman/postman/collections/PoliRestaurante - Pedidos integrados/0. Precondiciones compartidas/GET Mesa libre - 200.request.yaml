@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/mesas/{{mesaId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Mesa libre', () => pm.expect(pm.response.json().estado).to.eql('LIBRE'));
+    language: text/javascript
+order: 2000

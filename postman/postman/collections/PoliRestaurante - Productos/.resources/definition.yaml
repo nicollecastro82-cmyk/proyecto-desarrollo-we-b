@@ -1,2 +1,2 @@
 $kind: collection
-description: Pruebas del módulo de Productos integrado en app.py. Reutiliza una categoría administrada por el CRUD de Yina; por defecto usa Bebidas (ID 2) y primero verifica que exista y siga activa.
+description: Pruebas de Productos. Reutiliza una categoría activa administrada por el CRUD de Yina; el ambiente local usa actualmente el ID 7 porque Bebidas (ID 2) está inactiva.

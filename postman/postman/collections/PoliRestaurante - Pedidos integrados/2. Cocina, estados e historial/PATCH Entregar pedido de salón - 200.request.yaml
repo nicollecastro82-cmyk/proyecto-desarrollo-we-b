@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/pedidos/{{salonOrderId}}/estado"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "estado": "ENTREGADO",
+      "id_usuario_cambio": {{userId}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Pedido entregado', () => pm.expect(pm.response.json().datos.estado).to.eql('ENTREGADO'));
+    language: text/javascript
+order: 5000
